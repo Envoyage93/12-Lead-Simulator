@@ -1,0 +1,999 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Twelve-Lead Vector Lab (Copy)</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: black-and-gold masthead with mode tabs; the 12-lead printout is the hero; 3D heart vector beside the lead inspector; pattern library and controls; teaching card; sources. Light "paper" look in Vanderbilt black and gold; the 3D stage is a black instrument panel. */
+:root{
+  --gold:#cfae70; --dgold:#866a2e; --deep:#7a5f25; --black:#000000; --ink:#111111; --body:#2e2b26; --muted:#5c564b;
+  --paper:#faf8f3; --tint:#f2ecdd; --tint2:#f7efd9; --sunk:#f3eee2; --line:#e2d9c4; --good:#1d7550; --goodbg:#e1f2ea; --bad:#b0262f;
+  --f-display:"Archivo",Arial,sans-serif; --f-body:"Source Serif 4",Georgia,serif; --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+html,body{background:var(--paper);color:var(--body)}
+body{font-family:var(--f-body);font-size:16px;line-height:1.5}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--dgold);outline-offset:2px}
+.mast{background:var(--black);border-top:8px solid var(--gold)}
+.mast .in{max-width:1180px;margin:0 auto;padding-block:22px 0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:14px}
+.mrow{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:10px 24px}
+.eyebrow{font-family:var(--f-display);font-weight:700;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--dgold)}
+.mast .eyebrow{color:var(--gold)}
+.mast h1{font-family:var(--f-display);font-weight:800;font-size:clamp(30px,5vw,46px);line-height:1.02;color:#f6f1e4;margin:6px 0 0;letter-spacing:-.01em}
+.mast p{margin:0;color:#c9c0ac;max-width:52ch;font-size:15px}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}
+.tab{background:transparent;border:0;border-bottom:3px solid transparent;color:#bdb4a0;padding:10px 14px 9px;font-family:var(--f-display);font-weight:700;font-size:14px;letter-spacing:.08em;text-transform:uppercase}
+.tab[aria-selected="true"]{color:#f6f1e4;border-bottom-color:var(--gold)}
+.tab small{display:block;font-weight:500;font-size:11px;letter-spacing:.04em;text-transform:none;color:#958c78}
+.wrap{max-width:1180px;margin:0 auto;padding-block:22px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:22px}
+
+.sheet{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.sheethead{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 18px;padding:12px 16px;border-bottom:1px solid var(--line);font-family:var(--f-mono);font-size:12px;color:var(--ink);align-items:start}
+@media (max-width:640px){.sheethead{grid-template-columns:1fr}}
+.meas{display:flex;flex-wrap:wrap;gap:4px 18px;font-variant-numeric:tabular-nums;color:var(--muted)}
+.meas b{font-weight:500;color:var(--ink)}
+.spec{color:var(--muted);text-align:right}
+@media (max-width:640px){.spec{text-align:left}}
+.interp{grid-column:1/-1;font-weight:500;color:var(--ink);font-size:13px}
+.interp.hidden{color:var(--muted);font-style:italic;font-weight:400}
+.interp .src{color:var(--muted);font-weight:400}
+.sheettools{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:8px 16px;border-bottom:1px solid var(--line);background:var(--paper)}
+.tool{background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 12px;font-family:var(--f-display);font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink)}
+.tool[aria-pressed="true"]{background:var(--black);color:var(--gold);border-color:var(--black)}
+.calread{font-family:var(--f-mono);font-size:12px;color:var(--ink);font-variant-numeric:tabular-nums}
+.calread.dim{color:var(--muted)}
+.paperwrap{overflow-x:auto;position:relative}
+.paperbox{position:relative;min-width:820px}
+.paperbox canvas{display:block;width:100%}
+#overlay{position:absolute;inset:0;cursor:pointer;touch-action:pan-x pan-y}
+.loading{position:absolute;inset:0;display:grid;place-items:center;background:rgba(255,250,247,.7);font-family:var(--f-display);font-weight:700;letter-spacing:.1em;text-transform:uppercase;font-size:12px;color:var(--dgold)}
+.hint{font-size:13px;color:var(--muted);padding:8px 16px;border-top:1px solid var(--line)}
+
+.lab{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px}
+@media (max-width:860px){.lab{grid-template-columns:1fr}}
+.stage{background:#0b0b0b;border-radius:16px;overflow:hidden;position:relative;min-height:300px}
+.stage::before{content:"";position:absolute;left:0;top:0;right:0;height:6px;background:var(--gold);z-index:1}
+#three{display:block;width:100%;height:440px}
+@media (max-width:640px){#three{height:340px}}
+.stagebar{position:absolute;left:14px;right:14px;top:52px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;pointer-events:none}
+.stagebar>*{pointer-events:auto}
+.stagelab{font-family:var(--f-display);font-weight:700;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
+.stagelab span{display:block;color:#958c78;letter-spacing:.04em;text-transform:none;font-weight:500;margin-top:2px}
+.views{display:flex;gap:4px}
+.views button{background:rgba(255,255,255,.06);border:1px solid #3a3226;color:#e9e1cf;border-radius:6px;padding:5px 10px;font-family:var(--f-display);font-weight:600;font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.views button[aria-pressed="true"]{border-color:var(--gold);color:var(--gold)}
+.hm{position:absolute;right:14px;top:88px}
+@media (max-width:520px){.hm{top:auto;bottom:46px}}
+.stabs{position:relative;z-index:2;display:flex;gap:2px;padding:14px 14px 0;background:#0b0b0b}
+.stabs button{background:transparent;border:0;border-bottom:2px solid transparent;color:#958c78;padding:6px 10px 8px;font-family:var(--f-display);font-weight:700;font-size:13px;letter-spacing:.1em;text-transform:uppercase}
+.stabs button[aria-selected="true"]{color:#f6f1e4;border-bottom-color:var(--gold)}
+#wig,#pvl{display:block;width:100%}
+.hemobar{position:absolute;left:14px;right:14px;top:52px;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-family:var(--f-mono);font-size:11px;color:#958c78;pointer-events:none}
+.hemobar>*{pointer-events:auto}
+.hemobar label{font-family:var(--f-display);font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);font-size:12px}
+.hemobar select{background:#1a1712;color:#f6f1e4;border:1px solid #3a3226;border-radius:6px;padding:5px 8px;font-family:var(--f-display);font-weight:600;font-size:13px;color-scheme:dark}
+.legend{position:absolute;left:14px;right:14px;bottom:10px;display:flex;flex-wrap:wrap;gap:4px 14px;font-family:var(--f-mono);font-size:11px;color:#bdb4a0}
+.legend i{display:inline-block;width:22px;height:4px;border-radius:2px;vertical-align:middle;margin-right:6px}
+.nogl{position:absolute;inset:0;display:grid;place-items:center;color:#e9e1cf;padding:24px;text-align:center}
+
+.inspect{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;display:grid;gap:14px;align-content:start}
+.inspect h2{font-family:var(--f-display);font-weight:800;font-size:40px;line-height:1;margin:2px 0 0;color:var(--ink)}
+.inspect .where{margin:4px 0 0}
+.leadgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}
+.lb{background:var(--sunk);border:1px solid var(--line);border-radius:6px;padding:8px 6px;font-family:var(--f-display);font-weight:700;font-size:14px;color:var(--ink)}
+.lb:hover{border-color:var(--gold)}
+.lb[aria-pressed="true"]{background:var(--black);border-color:var(--black);color:var(--gold)}
+.proj{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tile{background:var(--tint);border-radius:12px;padding:12px 14px}
+.tile .k{font-family:var(--f-display);font-weight:700;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--dgold)}
+.tile .v{font-family:var(--f-display);font-weight:800;font-size:30px;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1.1}
+.tile .s{font-size:13px;color:var(--muted)}
+.explain{margin:0;font-size:15px}
+
+.controls{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
+@media (max-width:860px){.controls{grid-template-columns:1fr}}
+fieldset{border:0;margin:0;padding:0;min-width:0}
+.groups{display:grid;gap:10px}
+.grp{display:grid;grid-template-columns:120px minmax(0,1fr);gap:8px;align-items:start}
+@media (max-width:520px){.grp{grid-template-columns:1fr;gap:4px}}
+.glab{font-family:var(--f-display);font-weight:700;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--dgold);padding-top:8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:#fff;border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-family:var(--f-display);font-weight:600;font-size:14px;color:var(--ink)}
+.chip sup{font-size:10px;color:var(--muted);margin-left:3px;font-weight:600}
+.chip:hover{border-color:var(--gold)}
+.chip[aria-pressed="true"]{background:var(--black);border-color:var(--black);color:var(--gold)}
+.chip[aria-pressed="true"] sup{color:#c9b98f}
+fieldset:disabled .chips{opacity:.45} fieldset:disabled .chip{cursor:not-allowed}
+.side{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:grid;gap:12px}
+.row{display:flex;align-items:center;gap:10px;font-family:var(--f-display);font-weight:700;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--dgold)}
+.row input{flex:1;accent-color:var(--dgold);min-width:0}
+.row output{font-size:20px;color:var(--ink);letter-spacing:0;min-width:2.4em;text-align:right;font-variant-numeric:tabular-nums}
+.seg{display:flex;gap:6px}
+.seg button,.btn{flex:1;background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-family:var(--f-display);font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--black);color:var(--gold);border-color:var(--black)}
+.scrub{display:grid;gap:8px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.scrubhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.phase{font-family:var(--f-body);font-size:14px;color:var(--ink);text-align:right;min-height:2.6em}
+#scrub{width:100%;accent-color:var(--dgold)}
+.btn.quiz{background:var(--gold);border-color:var(--gold);color:var(--black)}
+.btn.quiz[aria-pressed="true"]{background:var(--black);color:var(--gold);border-color:var(--black)}
+
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px 24px;display:grid;gap:16px;position:relative;overflow:hidden}
+.card::before{content:"";position:absolute;left:0;top:0;right:0;height:6px;background:var(--gold)}
+.card h2{font-family:var(--f-display);font-weight:800;font-size:30px;line-height:1.1;margin:4px 0 0;color:var(--ink);text-wrap:balance}
+.finds{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.finds li{display:grid;grid-template-columns:150px minmax(0,1fr);gap:12px;padding:9px 12px;background:var(--tint2);border-radius:10px}
+@media (max-width:560px){.finds li{grid-template-columns:1fr;gap:2px}}
+.finds b{font-family:var(--f-display);font-weight:700;color:var(--black);font-size:14px;letter-spacing:.02em}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px 28px}
+@media (max-width:720px){.two{grid-template-columns:1fr}}
+.two p{margin:0;max-width:62ch}
+.two h3,.dxh{font-family:var(--f-display);font-weight:700;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--deep);margin:0 0 4px}
+.dxl{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}
+.dxl li{font-size:14px;background:var(--sunk);border:1px solid var(--line);border-radius:6px;padding:4px 9px}
+.dxl li code{font-family:var(--f-mono);font-size:12px;color:var(--dgold);margin-right:6px}
+.qhead{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline}
+.qhead p{margin:4px 0 0;color:var(--muted);font-size:15px;max-width:62ch}
+.score{font-family:var(--f-display);font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+.score b{color:var(--good)}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:560px){.opts{grid-template-columns:1fr}}
+.opt{text-align:left;background:var(--sunk);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-family:var(--f-display);font-weight:600;font-size:15px;color:var(--ink)}
+.opt:hover:not(:disabled){border-color:var(--gold)}
+.opt:disabled{cursor:default}
+.opt.right{background:var(--goodbg);border-color:var(--good)}
+.opt.wrong{background:#f8e3e4;border-color:var(--bad)}
+.verdict{font-family:var(--f-display);font-weight:800;font-size:22px;margin:0}
+.verdict.ok{color:var(--good)} .verdict.no{color:var(--bad)}
+.next{justify-self:start;background:var(--black);color:var(--gold);border:0;border-radius:8px;padding:10px 18px;font-family:var(--f-display);font-weight:800;font-size:15px;letter-spacing:.08em;text-transform:uppercase}
+.sources{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 20px;display:grid;gap:8px;font-size:14px}
+.sources p{margin:0;max-width:95ch}
+.sources b{font-family:var(--f-display);font-weight:700;color:var(--ink)}
+</style>
+<header class="mast"><div class="in">
+  <div class="mrow">
+    <div><div class="eyebrow">M1 cardiology · simulation</div><h1>Twelve-Lead Vector Lab</h1></div>
+    <p id="mastP">147 real 12-leads read by cardiologists, each shown with its own 3D heart vector reconstructed from the tracing.</p>
+  </div>
+  <div class="tabs" role="tablist" aria-label="Mode">
+    <button class="tab" role="tab" id="tabReal" aria-selected="true">Real patients<small>PTB-XL · cardiologist-labeled</small></button>
+    <button class="tab" role="tab" id="tabModel" aria-selected="false">Teaching model<small>Dipole simulator · cause and effect</small></button>
+  </div>
+</div></header>
+
+<div class="wrap">
+  <section class="sheet" aria-label="12-lead ECG printout">
+    <div class="sheethead">
+      <div class="meas" id="meas"></div>
+      <div class="spec" id="spec">25 mm/s · 10 mm/mV · 500 Hz</div>
+      <div class="interp" id="interp"></div>
+    </div>
+    <div class="sheettools">
+      <button class="tool" id="calBtn" aria-pressed="false">Calipers</button>
+      <span class="calread dim" id="calRead">Turn on calipers, then tap two points on the tracing.</span>
+    </div>
+    <div class="paperwrap"><div class="paperbox" id="paperbox">
+      <canvas id="paper"></canvas><canvas id="overlay" aria-label="12-lead tracing; tap a lead to inspect it"></canvas>
+      <div class="loading" id="loading" hidden>Loading tracing</div>
+    </div></div>
+    <div class="hint" id="hint">Tap any lead to inspect it. The gold cursor sweeps the 10-second record in step with the 3D vector below.</div>
+  </section>
+
+  <section class="lab">
+    <div class="stage">
+      <div class="stabs" role="tablist" aria-label="Stage view"><button role="tab" data-t="three" aria-selected="true">3D heart</button><button role="tab" data-t="wig" aria-selected="false">Wiggers</button><button role="tab" data-t="pv" aria-selected="false">PV loop</button></div>
+      <canvas id="three" aria-label="3D heart vector and lead axes"></canvas>
+      <canvas id="wig" hidden aria-label="Wiggers diagram for the current beat"></canvas>
+      <canvas id="pvl" hidden aria-label="Left ventricular pressure-volume loop for the current beat"></canvas>
+      <div class="hemobar" id="hemoBar" hidden><label for="hcond">Condition</label><select id="hcond"></select><span>Simulated hemodynamics, timed to this patient's ECG · dashed = normal heart</span></div>
+      <div class="stagebar only3d"><span class="stagelab" id="stageLab">Heart vector · this patient<span>Reconstructed from the 12-lead (Kors matrix)</span></span>
+        <div class="views" role="group" aria-label="Camera view">
+          <button data-v="front" aria-pressed="false">Frontal</button><button data-v="top" aria-pressed="false">Horizontal</button><button data-v="oblique" aria-pressed="true">Oblique</button>
+        </div></div>
+      <div class="views hm only3d" role="group" aria-label="Heart model"><button data-h="ghost" aria-pressed="true">Ghost heart</button><button data-h="solid" aria-pressed="false">Solid</button><button data-h="off" aria-pressed="false">Hide</button></div>
+      <div class="legend only3d"><span><i style="background:linear-gradient(90deg,#6f6a60,#cfae70,#c0714f)"></i>Vector loop, early → late</span><span><i style="background:#e9e1cf"></i>Projection on selected lead</span><span><i style="background:#ffc24d"></i>Depolarized muscle</span><span><i style="background:#fffadb"></i>Wavefront</span></div>
+    </div>
+    <div class="inspect">
+      <div><div class="eyebrow">Lead inspector</div><h2 id="leadName">II</h2><p class="where" id="leadWhere"></p></div>
+      <div class="leadgrid" id="leadgrid"></div>
+      <div class="proj">
+        <div class="tile"><div class="k">This lead now</div><div class="v" id="projV">+0.00</div><div class="s" id="projS">mV recorded</div></div>
+        <div class="tile"><div class="k">Heart vector now</div><div class="v" id="vecV">0.00</div><div class="s" id="vecS">mV · frontal 0°</div></div>
+      </div>
+      <p class="explain">A lead deflects upward when the heart vector points toward its positive pole and downward when it points away. Perpendicular means isoelectric. The gold axes are lead directions measured from real ECGs, not drawn by hand.</p>
+    </div>
+  </section>
+
+  <section class="controls">
+    <fieldset id="picker" aria-label="Choose an ECG pattern"><div class="groups" id="groups"></div></fieldset>
+    <div class="side">
+      <label class="row" for="hr" id="hrRow" hidden>Rate <input id="hr" type="range" min="40" max="150" value="72"><output id="hrOut">72</output></label>
+      <div class="scrub">
+        <div class="scrubhead"><span class="row" style="margin:0">One beat</span><span class="phase" id="phase">—</span></div>
+        <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Scrub through one heartbeat">
+        <div class="seg"><button id="bPrev" aria-label="Previous beat">◀ Beat</button><button id="bNext" aria-label="Next beat">Beat ▶</button></div>
+      </div>
+      <div class="seg" role="group" aria-label="Playback speed"><button id="sp1" aria-pressed="false">Real time</button><button id="sp4" aria-pressed="true">¼ speed</button><button id="sp0" aria-pressed="false">Pause</button></div>
+      <div class="seg"><button class="btn" id="another">Another patient</button><button class="btn quiz" id="quiz" aria-pressed="false">Quiz me</button></div>
+    </div>
+  </section>
+
+  <section class="card" id="card" aria-live="polite"></section>
+
+  <section class="sources" aria-label="Sources">
+    <div class="eyebrow">Data and methods</div>
+    <p><b>Tracings.</b> PTB-XL v1.0.3 (Wagner P, Strodthoff N, Bousseljot RD, Samek W, Schaeffter T. <i>Sci Data</i> 2020;7:154), via PhysioNet, CC BY 4.0. Recordings are shown at their original 500 Hz with a 0.67 Hz zero-phase high-pass and 150 Hz low-pass applied here. Labels are the dataset's SCP-ECG statements from cardiologist review; likelihoods shown as given. Only human-validated records without noise flags were used.</p>
+    <p><b>3D vector.</b> Frank vectorcardiogram reconstructed from leads I, II and V1–V6 with the Kors regression matrix (Kors JA et al. <i>Eur Heart J</i> 1990;11:1083–92). Lead directions and the teaching model's lead synthesis use a forward matrix fitted to these records by least squares; it agrees closely with the published Dower matrix. A single dipole explains <span id="r2txt">80–99%</span> of each lead's signal; the rest is non-dipolar, which only the real tracings show.</p>
+    <p><b>Heart model.</b> Adult heart with great vessels from Z-Anatomy, built on BodyParts3D (© Database Center for Life Science), CC BY-SA 4.0; simplified to 60,000 triangles for the web and placed in anatomical orientation. The heart vector is drawn from the center of the ventricles.</p>
+    <p><b>Activation animation.</b> The order in which muscle activates is a template from human isolated-heart mapping (Durrer D et al. <i>Circulation</i> 1970;41:899–912), with variants for bundle branch blocks, fascicular blocks, pre-excitation (left lateral pathway assumed), RV pacing and wide ectopic beats. Its timing is driven by the tracing itself: ventricles depolarize as this patient's QRS energy accumulates and recover across their T wave; atria fire on P waves detected from the record. It shows the sequence, not a patient-specific activation map.</p>
+    <p><b>Wiggers and PV loop.</b> A lumped time-varying elastance model of both ventricles, left atrium, systemic and pulmonary circulations (Suga–Sagawa elastance; three-element Windkessel aorta), integrated at 0.5 ms. Ventricular contraction starts 40 ms after this patient's QRS onset and relaxation ends with their T wave; the atria contract on their detected P waves (none in AF or flutter). PTB-XL contains no pressures, so every pressure and volume shown is simulated; conditions are teaching presets, not this patient's physiology.</p>
+    <p><b>Not for clinical use.</b> Teaching material. Interval measurements are left to the calipers on purpose.</p>
+  </section>
+</div>
+<script type="application/json" id="manifest">{"F":[[0.7493,-0.3107,0.1316],[0.1546,1.0203,-0.053],[-0.471,-0.2135,-0.9099],[0.3961,-0.8044,-1.5861],[0.8318,-0.3531,-1.5018],[1.1644,0.0124,-1.0407],[1.0924,0.2151,-0.3232],[0.7867,0.3403,0.1062]],"r2":[0.801,0.987,0.84,0.783,0.823,0.896,0.889,0.924],"n":150,"recs":[{"id":2489,"c":"normal","a":87,"s":"M","dx":[["NORM","normal ECG",100]],"st":null,"hr":65,"ax":18,"r":[340,766,1205,1651,2109,2573,3041,3517,3997,4479,4911],"so":false,"p":[257,683,1122,1568,2026,2490,2958,3434,3914,4396,4828],"pq":1,"am":"p"},{"id":2545,"c":"normal","a":64,"s":"F","dx":[["NORM","normal ECG",100]],"st":null,"hr":61,"ax":31,"r":[281,733,1199,1687,2176,2653,3151,3641,4130,4530],"so":false,"p":[188,640,1106,1594,2083,2560,3058,3548,4037,4437],"pq":1,"am":"p"},{"id":3030,"c":"normal","a":75,"s":"M","dx":[["NORM","normal ECG",100]],"st":null,"hr":63,"ax":57,"r":[377,850,1326,1802,2279,2754,3229,3709,4191,4667],"so":true,"p":[301,774,1250,1726,2203,2678,3153,3633,4115,4591],"pq":1,"am":"p"},{"id":2540,"c":"normal","a":87,"s":"F","dx":[["NORM","normal ECG",100]],"st":null,"hr":80,"ax":72,"r":[329,482,870,1422,1571,1973,2517,2667,3044,3194,3571,3720,4167,4750,4900],"so":false,"p":[253,406,794,1346,1495,1897,2441,2591,2968,3118,3495,3644,4091,4674,4824],"pq":1,"am":"p"},{"id":1662,"c":"normal","a":72,"s":"F","dx":[["NORM","normal ECG",100]],"st":null,"hr":66,"ax":2,"r":[267,611,1032,1569,2051,2499,2967,3424,3866,4321,4770],"so":false,"p":[187,531,952,1489,1971,2419,2887,3344,3786,4241,4690],"pq":0,"am":"p","pgen":1},{"id":14696,"c":"normal","a":64,"s":"F","dx":[["NORM","normal ECG",100]],"st":null,"hr":59,"ax":-10,"r":[553,1072,1583,2101,2613,3126,3635,4147,4654],"so":false,"p":[487,1006,1517,2035,2547,3060,3569,4081,4588],"pq":1,"am":"p"},{"id":2137,"c":"sbrad","a":51,"s":"F","dx":[["NORM","normal ECG",100],["SBRAD","sinus bradycardia",0]],"st":null,"hr":58,"ax":65,"r":[641,1167,1696,2206,2714,3232,3750,4274,4796],"so":false,"p":[545,1071,1600,2110,2618,3136,3654,4178,4700],"pq":1,"am":"p"},{"id":6202,"c":"sbrad","a":48,"s":"M","dx":[["NORM","normal ECG",80],["SBRAD","sinus bradycardia",0]],"st":null,"hr":51,"ax":27,"r":[499,1106,1660,2227,2855,3493,3646,4158,4834],"so":false,"p":[419,1026,1580,2147,2775,3413,3566,4078,4754],"pq":0,"am":"p","pgen":1},{"id":4606,"c":"sbrad","a":67,"s":"F","dx":[["NORM","normal ECG",80],["SBRAD","sinus bradycardia",0]],"st":null,"hr":48,"ax":-1,"r":[258,884,1512,2144,2758,3380,3989,4607],"so":false,"p":[184,810,1438,2070,2684,3306,3915,4533],"pq":1,"am":"p"},{"id":14245,"c":"sbrad","a":65,"s":"M","dx":[["NORM","normal ECG",50],["SBRAD","sinus bradycardia",0]],"st":null,"hr":55,"ax":26,"r":[175,746,1289,1837,2379,2912,3458,3999,4530],"so":false,"p":[107,678,1221,1769,2311,2844,3390,3931,4462],"pq":1,"am":"p"},{"id":3435,"c":"stach","a":65,"s":"F","dx":[["NORM","normal ECG",80],["STACH","sinus tachycardia",0]],"st":null,"hr":105,"ax":54,"r":[357,638,921,1205,1490,1774,2058,2343,2628,2913,3197,3483,3768,4053,4339,4624,4909],"so":false,"p":[228,509,792,1076,1361,1645,1929,2214,2499,2784,3068,3354,3639,3924,4210,4495,4780],"pq":1,"am":"p"},{"id":6947,"c":"stach","a":54,"s":"M","dx":[["NORM","normal ECG",80],["STACH","sinus tachycardia",0]],"st":null,"hr":104,"ax":54,"r":[304,591,878,1169,1461,1750,2037,2320,2599,2878,3162,3446,3735,4028,4322,4617,4906],"so":false,"p":[229,516,803,1094,1386,1675,1962,2245,2524,2803,3087,3371,3660,3953,4247,4542,4831],"pq":1,"am":"p"},{"id":1876,"c":"stach","a":66,"s":"F","dx":[["NORM","normal ECG",80],["STACH","sinus tachycardia",0]],"st":null,"hr":103,"ax":-11,"r":[397,688,979,1271,1562,1852,2142,2432,2723,3014,3304,3595,3886,4177,4469,4759],"so":false,"p":[256,547,838,1130,1421,1711,2001,2291,2582,2873,3163,3454,3745,4036,4328,4618],"pq":1,"am":"p"},{"id":3487,"c":"stach","a":50,"s":"M","dx":[["NORM","normal ECG",80],["STACH","sinus tachycardia",0]],"st":null,"hr":109,"ax":-25,"r":[159,433,705,978,1252,1527,1800,2073,2347,2624,2904,3185,3466,3745,4027,4309,4587,4860],"so":false,"p":[79,353,625,898,1172,1447,1720,1993,2267,2544,2824,3105,3386,3665,3947,4229,4507,4780],"pq":1,"am":"p"},{"id":1672,"c":"sarrh","a":74,"s":"F","dx":[["NORM","normal ECG",100],["SARRH","sinus arrhythmia",0]],"st":null,"hr":85,"ax":14,"r":[203,533,886,1242,1592,1927,2279,2631,2983,3313,3654,4028,4555,4941],"so":false,"p":[148,478,831,1187,1537,1872,2224,2576,2928,3258,3599,3973,4500,4886],"pq":1,"am":"p"},{"id":1124,"c":"sarrh","a":39,"s":"F","dx":[["NORM","normal ECG",100],["SARRH","sinus arrhythmia",0]],"st":null,"hr":63,"ax":-49,"r":[545,1019,1525,2030,2472,2915,3455,3971,4450,4884],"so":false,"p":[482,956,1462,1967,2409,2852,3392,3908,4387,4821],"pq":1,"am":"p"},{"id":18329,"c":"sarrh","a":45,"s":"M","dx":[["NORM","normal ECG",80],["SARRH","sinus arrhythmia",0]],"st":null,"hr":75,"ax":45,"r":[494,887,1286,1694,2104,2493,2853,3219,3624,4097,4556,4947],"so":false,"p":[422,815,1214,1622,2032,2421,2781,3147,3552,4025,4484,4875],"pq":1,"am":"p"},{"id":4117,"c":"afib","a":39,"s":"M","dx":[["AFIB","atrial fibrillation",100]],"st":null,"hr":137,"ax":106,"r":[181,438,635,828,1072,1260,1507,1700,1878,2058,2287,2616,2867,3151,3327,3535,3721,4094,4327,4521,4751],"so":false,"p":[],"pq":0,"am":"af"},{"id":8215,"c":"afib","a":71,"s":"F","dx":[["AFIB","atrial fibrillation",100]],"st":null,"hr":81,"ax":-8,"r":[495,795,1169,1605,1914,2220,2632,2997,3391,3728,4077,4472,4947],"so":false,"p":[],"pq":0,"am":"af"},{"id":8625,"c":"afib","a":60,"s":"M","dx":[["NST_","non-specific ST changes",100],["AFIB","atrial fibrillation",0]],"st":null,"hr":83,"ax":38,"r":[389,744,1133,1503,1895,2234,2611,2905,3219,3580,3945,4294,4675,4914],"so":false,"p":[],"pq":0,"am":"af"},{"id":7488,"c":"afib","a":74,"s":"M","dx":[["NST_","non-specific ST changes",100],["AFIB","atrial fibrillation",0]],"st":null,"hr":115,"ax":-5,"r":[337,597,942,1216,1439,1746,2031,2240,2469,2675,2888,3191,3441,3749,3960,4309,4719,4936],"so":false,"p":[],"pq":0,"am":"af"},{"id":20406,"c":"afib","a":58,"s":"M","dx":[["AFIB","atrial fibrillation",100]],"st":null,"hr":70,"ax":-106,"r":[549,1019,1671,2445,2769,3196,3628,3928,4275,4656],"so":false,"p":[],"pq":0,"am":"af"},{"id":12542,"c":"afib","a":83,"s":"F","dx":[["AFIB","atrial fibrillation",100]],"st":null,"hr":63,"ax":53,"r":[527,776,1239,1735,1886,2474,3104,3575,4050,4390,4944],"so":false,"p":[],"pq":0,"am":"af"},{"id":6205,"c":"aflt","a":81,"s":"M","dx":[["AFLT","atrial flutter",100]],"st":"Stadium I","hr":141,"ax":20,"r":[317,529,745,958,1170,1396,1598,1811,2025,2240,2466,2678,2880,3107,3308,3521,3734,3948,4163,4390,4592,4804],"so":false,"p":[],"pq":0,"am":"flutter"},{"id":6179,"c":"aflt","a":77,"s":"M","dx":[["AFLT","atrial flutter",100]],"st":null,"hr":121,"ax":70,"r":[486,728,958,1309,1562,1801,2151,2398,2636,2963,3208,3441,3799,4052,4286,4633,4881],"so":false,"p":[],"pq":0,"am":"flutter"},{"id":449,"c":"aflt","a":63,"s":"F","dx":[["AFLT","atrial flutter",100]],"st":null,"hr":175,"ax":-20,"r":[320,496,668,845,1023,1204,1385,1564,1742,1918,2080,2250,2418,2584,2753,2922,3101,3268,3445,3605,3767,3928,4097,4271,4448,4619,4777],"so":false,"p":[],"pq":0,"am":"flutter"},{"id":2739,"c":"aflt","a":89,"s":"M","dx":[["AFLT","atrial flutter",100]],"st":null,"hr":148,"ax":-28,"r":[242,434,644,842,1050,1253,1453,1656,1863,2070,2273,2472,2676,2883,3089,3290,3490,3694,3902,4103,4303,4509,4716,4919],"so":false,"p":[],"pq":0,"am":"flutter"},{"id":1773,"c":"aflt","a":65,"s":"M","dx":[["AFLT","atrial flutter",100]],"st":null,"hr":64,"ax":7,"r":[376,805,1263,1678,2362,3118,3599,4011,4820],"so":false,"p":[],"pq":0,"am":"flutter"},{"id":8461,"c":"svt","a":71,"s":"M","dx":[["PSVT","paroxysmal supraventricular tachycardia",100]],"st":null,"hr":141,"ax":9,"r":[260,472,683,894,1105,1317,1529,1743,1955,2168,2381,2594,2806,3019,3234,3448,3662,3876,4088,4301,4514,4728,4942],"so":false,"p":[],"pq":0,"am":"svt"},{"id":3134,"c":"svt","a":55,"s":"F","dx":[["PSVT","paroxysmal supraventricular tachycardia",100]],"st":null,"hr":169,"ax":29,"r":[286,464,640,824,1001,1168,1355,1522,1700,1877,2053,2232,2410,2587,2775,2954,3131,3309,3484,3661,3830,4006,4186,4364,4541,4719,4906],"so":false,"p":[],"pq":1,"am":"svt"},{"id":2051,"c":"svt","a":72,"s":"F","dx":[["PSVT","paroxysmal supraventricular tachycardia",100]],"st":null,"hr":63,"ax":-45,"r":[2518,3666,4246,4625,4819],"so":false,"p":[],"pq":1,"am":"svt"},{"id":7889,"c":"svt","a":74,"s":"F","dx":[["PSVT","paroxysmal supraventricular tachycardia",100]],"st":null,"hr":160,"ax":-14,"r":[232,418,612,795,980,1169,1356,1544,1733,1920,2107,2296,2482,2671,2868,3046,3235,3423,3612,3799,3986,4176,4356,4545,4732,4920],"so":false,"p":[],"pq":1,"am":"svt"},{"id":12346,"c":"svt","a":82,"s":"F","dx":[["PSVT","paroxysmal supraventricular tachycardia",100]],"st":null,"hr":131,"ax":-70,"r":[285,515,742,970,1197,1427,1656,1885,2114,2342,2569,2798,3027,3255,3485,3713,3940,4168,4396,4625,4855],"so":false,"p":[],"pq":1,"am":"svt"},{"id":6105,"c":"pac","a":82,"s":"F","dx":[["NORM","normal ECG",80],["PAC","atrial premature complex",0],["SR","sinus rhythm",0]],"st":null,"hr":76,"ax":15,"r":[420,820,1220,1616,2009,2406,2802,3194,3505,3957,4347,4732],"so":false,"p":[340,740,1140,1536,1929,2326,2722,3114,3425,3877,4267,4652],"pq":1,"am":"p"},{"id":2046,"c":"pac","a":77,"s":"F","dx":[["NORM","normal ECG",80],["PAC","atrial premature complex",0],["SR","sinus rhythm",0]],"st":null,"hr":55,"ax":21,"r":[285,724,1021,1372,1986,2555,3099,3671,4212,4687],"so":false,"p":[211,650,947,1298,1912,2481,3025,3597,4138,4613],"pq":1,"am":"p"},{"id":3394,"c":"pac","a":63,"s":"M","dx":[["NORM","normal ECG",80],["PAC","atrial premature complex",0],["SR","sinus rhythm",0]],"st":null,"hr":57,"ax":23,"r":[195,717,1243,1770,2303,2614,3209,3734,4252,4771],"so":false,"p":[104,626,1152,1679,2212,2523,3118,3643,4161,4680],"pq":1,"am":"p"},{"id":8872,"c":"pvc","a":60,"s":"M","dx":[["PVC","ventricular premature complex",100],["BIGU","bigeminal pattern (unknown origin, SV or Ventricular)",100]],"st":null,"hr":71,"ax":88,"r":[497,783,1400,1684,2272,2557,3113,3399,3983,4265,4884],"so":false,"p":[352,638,1255,1539,2127,2412,2968,3254,3838,4120,4739],"pq":1,"am":"p"},{"id":8569,"c":"pvc","a":87,"s":"M","dx":[["NORM","normal ECG",50],["PVC","ventricular premature complex",100]],"st":null,"hr":80,"ax":88,"r":[222,631,932,1407,1782,2143,2522,2892,3252,3624,4005,4401,4800],"so":false,"p":[154,563,864,1339,1714,2075,2454,2824,3184,3556,3937,4333,4732],"pq":1,"am":"p"},{"id":3962,"c":"pvc","a":75,"s":"M","dx":[["NORM","normal ECG",50],["PVC","ventricular premature complex",100]],"st":null,"hr":74,"ax":22,"r":[422,846,1269,1693,2112,2329,2937,3332,3727,4125,4531,4932],"so":false,"p":[340,764,1187,1611,2030,2247,2855,3250,3645,4043,4449,4850],"pq":1,"am":"p"},{"id":4637,"c":"pvc","a":47,"s":"M","dx":[["PVC","ventricular premature complex",100],["BIGU","bigeminal pattern (unknown origin, SV or Ventricular)",100]],"st":null,"hr":79,"ax":-24,"r":[226,629,896,1359,1651,2099,2355,2846,3107,3571,3860,4281,4536,4914],"so":false,"p":[140,543,810,1273,1565,2013,2269,2760,3021,3485,3774,4195,4450,4828],"pq":1,"am":"p"},{"id":19004,"c":"pvc","a":50,"s":"M","dx":[["NORM","normal ECG",50],["PVC","ventricular premature complex",100]],"st":null,"hr":53,"ax":-14,"r":[630,940,1667,2212,2742,3307,3919,4553],"so":false,"p":[545,855,1582,2127,2657,3222,3834,4468],"pq":1,"am":"p"},{"id":2184,"c":"bigu","a":53,"s":"F","dx":[["ASMI","anteroseptal myocardial infarction",100],["SR","sinus rhythm",0],["BIGU","bigeminal pattern (unknown origin, SV or Ventricular)",0]],"st":"Stadium III","hr":89,"ax":95,"r":[521,828,1348,1658,2208,2511,3062,3366,3859,4197,4626,4944],"so":false,"p":[417,724,1244,1554,2104,2407,2958,3262,3755,4093,4522,4840],"pq":1,"am":"p"},{"id":16162,"c":"bigu","a":66,"s":"M","dx":[["ISCAL","ischemic in anterolateral leads",15],["BIGU","bigeminal pattern (unknown origin, SV or Ventricular)",0]],"st":null,"hr":108,"ax":109,"r":[712,990,1696,1974,2675,2953,3650,3929,4600,4878],"so":false,"p":[625,903,1609,1887,2588,2866,3563,3842,4513,4791],"pq":1,"am":"p"},{"id":16361,"c":"bigu","a":36,"s":"F","dx":[["PVC","ventricular premature complex",100],["BIGU","bigeminal pattern (unknown origin, SV or Ventricular)",100],["AFIB","atrial fibrillation",0]],"st":null,"hr":64,"ax":-38,"r":[804,1065,1537,2291,3037,3760,4021,4484,4808],"so":false,"p":[],"pq":1,"am":"af"},{"id":3496,"c":"avb1","a":66,"s":"M","dx":[["1AVB","first degree AV block",100],["SR","sinus rhythm",0]],"st":null,"hr":73,"ax":6,"r":[288,694,1101,1513,1939,2344,2752,3165,3580,4002,4413,4810],"so":false,"p":[157,563,970,1382,1808,2213,2621,3034,3449,3871,4282,4679],"pq":1,"am":"p"},{"id":3658,"c":"avb1","a":67,"s":"M","dx":[["1AVB","first degree AV block",100],["SR","sinus rhythm",0]],"st":null,"hr":81,"ax":58,"r":[469,870,1265,1638,2019,2411,2783,3149,3514,3869,4218,4570,4929],"so":false,"p":[362,763,1158,1531,1912,2304,2676,3042,3407,3762,4111,4463,4822],"pq":1,"am":"p"},{"id":13416,"c":"avb1","a":81,"s":"M","dx":[["1AVB","first degree AV block",100],["SR","sinus rhythm",0]],"st":null,"hr":70,"ax":-12,"r":[526,962,1388,1816,2237,2657,3087,3526,3964,4406,4836],"so":false,"p":[392,828,1254,1682,2103,2523,2953,3392,3830,4272,4702],"pq":1,"am":"p"},{"id":14332,"c":"avb1","a":83,"s":"F","dx":[["1AVB","first degree AV block",100],["SR","sinus rhythm",0]],"st":null,"hr":66,"ax":-175,"r":[585,1040,1498,1954,2399,2864,3324,3767,4221,4681],"so":false,"p":[479,934,1392,1848,2293,2758,3218,3661,4115,4575],"pq":1,"am":"p"},{"id":14009,"c":"avb2","a":">89","s":"M","dx":[["2AVB","second degree AV block",100]],"st":null,"hr":94,"ax":-25,"r":[343,678,1003,1323,1643,1963,2534,2861,3181,3499,3814,4131,4692],"so":false,"p":[],"pq":0,"am":"p"},{"id":18101,"c":"avb2","a":75,"s":"M","dx":[["CRBBB","complete right bundle branch block",100],["2AVB","second degree AV block",100]],"st":null,"hr":116,"ax":-17,"r":[360,619,863,1147,1408,1672,1917,2171,2453,2702,2957,3241,3495,3773,4036,4282,4537,4825],"so":false,"p":[79,223,482,726,1010,1271,1535,1780,2034,2316,2565,2820,3104,3358,3636,3899,4145,4400,4688],"pq":1,"am":"p"},{"id":4827,"c":"avb3","a":80,"s":"M","dx":[["IMI","inferior myocardial infarction",100],["3AVB","third degree AV block",100]],"st":"Stadium I","hr":70,"ax":4,"r":[516,948,1190,1378,1809,2241,2671,3101,3532,3964,4137,4393,4825],"so":false,"p":[],"pq":0,"am":"p"},{"id":8620,"c":"avb3","a":">89","s":"F","dx":[["CLBBB","complete left bundle branch block",100],["3AVB","third degree AV block",100]],"st":null,"hr":110,"ax":12,"r":[481,879,1287,2098,2293,2642,2900,3096,3419,3699,3894,4159,4500,4696,4875],"so":false,"p":[50,250,450,655,845,1050,1250,1462,1650,1850,2050,2250,2450,2650,2850,3050,3250,3450,3650,3850,4044,4250,4450,4650,4842],"pq":1,"am":"p"},{"id":959,"c":"avb3","a":88,"s":"F","dx":[["ASMI","anteroseptal myocardial infarction",15],["IRBBB","incomplete right bundle branch block",100],["3AVB","third degree AV block",100],["SR","sinus rhythm",0]],"st":null,"hr":95,"ax":60,"r":[227,655,1097,1401,1672,1984,2140,2565,2893,3159,3641,4069,4386,4660,4947],"so":false,"p":[],"pq":0,"am":"p"},{"id":8911,"c":"avb3","a":68,"s":"M","dx":[["ISC_","non-specific ischemic",50],["LPFB","left posterior fascicular block",100],["LAO/LAE","left atrial overload/enlargement",100],["3AVB","third degree AV block",100]],"st":null,"hr":90,"ax":92,"r":[267,546,1044,1329,1711,2115,2422,2898,3137,3508,3682,3854,4213,4464,4900],"so":false,"p":[],"pq":0,"am":"p"},{"id":7688,"c":"avb3","a":86,"s":"F","dx":[["3AVB","third degree AV block",100],["LVH","left ventricular hypertrophy",50],["ISC_","non-specific ischemic",100],["NST_","non-specific ST changes",0],["SR","sinus rhythm",0]],"st":null,"hr":52,"ax":18,"r":[471,1358,1931,2304,2858,3431,4367,4930],"so":false,"p":[],"pq":0,"am":"p"},{"id":4444,"c":"lafb","a":57,"s":"M","dx":[["LAFB","left anterior fascicular block",100]],"st":null,"hr":62,"ax":-58,"r":[269,753,1252,1739,2215,2702,3200,3677,4171,4666],"so":false,"p":[190,674,1173,1660,2136,2623,3121,3598,4092,4587],"pq":1,"am":"p"},{"id":16678,"c":"lafb","a":86,"s":"M","dx":[["LAFB","left anterior fascicular block",100]],"st":null,"hr":89,"ax":-44,"r":[344,696,1037,1368,1701,2033,2233,2486,2904,3253,3478,3827,4175,4521,4856],"so":false,"p":[266,618,959,1290,1623,1955,2155,2408,2826,3175,3400,3749,4097,4443,4778],"pq":1,"am":"p"},{"id":16369,"c":"lafb","a":64,"s":"M","dx":[["LAFB","left anterior fascicular block",100]],"st":null,"hr":55,"ax":-85,"r":[412,955,1504,2057,2597,3133,3679,4238,4796],"so":false,"p":[328,871,1420,1973,2513,3049,3595,4154,4712],"pq":1,"am":"p"},{"id":14123,"c":"lafb","a":64,"s":"M","dx":[["LAFB","left anterior fascicular block",100]],"st":null,"hr":71,"ax":-71,"r":[175,509,923,1314,1743,2148,2587,3017,3438,3857,4278,4702],"so":false,"p":[68,402,816,1207,1636,2041,2480,2910,3331,3750,4171,4595],"pq":1,"am":"p"},{"id":6938,"c":"lpfb","a":63,"s":"F","dx":[["LPFB","left posterior fascicular block",100],["SR","sinus rhythm",0]],"st":null,"hr":92,"ax":156,"r":[405,733,1060,1383,1715,2039,2367,2693,3021,3348,3670,3997,4321,4645,4882],"so":true,"p":[337,665,992,1315,1647,1971,2299,2625,2953,3280,3602,3929,4253,4577,4814],"pq":1,"am":"p"},{"id":7419,"c":"lpfb","a":18,"s":"F","dx":[["LPFB","left posterior fascicular block",100],["SR","sinus rhythm",0]],"st":null,"hr":82,"ax":119,"r":[274,705,1125,1531,1899,2246,2600,2966,3323,3687,4047,4413,4805],"so":false,"p":[193,624,1044,1450,1818,2165,2519,2885,3242,3606,3966,4332,4724],"pq":1,"am":"p"},{"id":377,"c":"lpfb","a":17,"s":"F","dx":[["LPFB","left posterior fascicular block",100],["SR","sinus rhythm",0]],"st":null,"hr":97,"ax":114,"r":[299,609,910,1213,1523,1836,2148,2456,2764,3067,3368,3673,3984,4299,4617,4937],"so":false,"p":[219,529,830,1133,1443,1756,2068,2376,2684,2987,3288,3593,3904,4219,4537,4857],"pq":0,"am":"p","pgen":1},{"id":16116,"c":"lpfb","a":25,"s":"M","dx":[["LPFB","left posterior fascicular block",100],["SR","sinus rhythm",0]],"st":null,"hr":69,"ax":125,"r":[192,628,1072,1520,1963,2396,2809,3217,3635,4057,4492,4934],"so":false,"p":[47,483,927,1375,1818,2251,2664,3072,3490,3912,4347,4789],"pq":1,"am":"p"},{"id":17768,"c":"irbbb","a":87,"s":"M","dx":[["IRBBB","incomplete right bundle branch block",100]],"st":null,"hr":65,"ax":-4,"r":[204,656,1111,1582,2064,2536,2998,3449,3911,4381,4836],"so":false,"p":[124,576,1031,1502,1984,2456,2918,3369,3831,4301,4756],"pq":0,"am":"p","pgen":1},{"id":1347,"c":"irbbb","a":19,"s":"M","dx":[["IRBBB","incomplete right bundle branch block",100]],"st":null,"hr":53,"ax":-94,"r":[558,1120,1809,2412,2976,3504,4033,4585],"so":false,"p":[472,1034,1723,2326,2890,3418,3947,4499],"pq":1,"am":"p"},{"id":1483,"c":"irbbb","a":57,"s":"M","dx":[["IRBBB","incomplete right bundle branch block",100]],"st":null,"hr":51,"ax":-27,"r":[235,1010,1294,2018,2615,3205,3354,3634,4397,4684],"so":false,"p":[155,930,1214,1938,2535,3125,3274,3554,4317,4604],"pq":0,"am":"p","pgen":1},{"id":15526,"c":"rbbb","a":77,"s":"F","dx":[["CRBBB","complete right bundle branch block",100]],"st":null,"hr":155,"ax":-141,"r":[273,464,659,877,1070,1243,1435,1628,1822,2014,2207,2421,2617,2787,2986,3173,3372,3558,3753,3942,4142,4329,4540,4733,4935],"so":false,"p":[172,363,558,776,969,1142,1334,1527,1721,1913,2106,2320,2516,2686,2885,3072,3271,3457,3652,3841,4041,4228,4439,4632,4834],"pq":1,"am":"p"},{"id":13015,"c":"rbbb","a":87,"s":"M","dx":[["CRBBB","complete right bundle branch block",100]],"st":null,"hr":65,"ax":-94,"r":[496,1010,1452,1908,2367,2799,3260,3861,4335,4898],"so":false,"p":[416,930,1372,1828,2287,2719,3180,3781,4255,4818],"pq":0,"am":"p","pgen":1},{"id":5212,"c":"rbbb","a":56,"s":"M","dx":[["CRBBB","complete right bundle branch block",100]],"st":null,"hr":82,"ax":178,"r":[371,735,1018,1382,1839,2206,2573,2939,3315,3698,4065,4454,4850],"so":false,"p":[251,615,898,1262,1719,2086,2453,2819,3195,3578,3945,4334,4730],"pq":1,"am":"p"},{"id":3461,"c":"rbbb","a":87,"s":"M","dx":[["CRBBB","complete right bundle branch block",100]],"st":null,"hr":61,"ax":-178,"r":[152,658,946,1160,1628,2215,2718,3215,3701,4215,4662],"so":false,"p":[100,606,894,1108,1576,2163,2666,3163,3649,4163,4610],"pq":1,"am":"p"},{"id":3041,"c":"rbbb","a":76,"s":"M","dx":[["CRBBB","complete right bundle branch block",100],["AFIB","atrial fibrillation",0]],"st":null,"hr":56,"ax":124,"r":[245,783,1347,1782,2333,2811,3241,3776,4345,4832],"so":false,"p":[],"pq":0,"am":"af"},{"id":2615,"c":"lbbb","a":64,"s":"M","dx":[["CLBBB","complete left bundle branch block",100]],"st":null,"hr":76,"ax":-21,"r":[472,881,1280,1678,2075,2471,2870,3260,3645,4026,4408,4793],"so":false,"p":[392,801,1200,1598,1995,2391,2790,3180,3565,3946,4328,4713],"pq":0,"am":"p","pgen":1},{"id":7304,"c":"lbbb","a":71,"s":"M","dx":[["CLBBB","complete left bundle branch block",100]],"st":null,"hr":152,"ax":3,"r":[175,372,571,770,968,1166,1363,1561,1759,1957,2156,2354,2551,2750,2948,3147,3345,3542,3740,3938,4136,4335,4532,4731,4929],"so":false,"p":[72,269,468,667,865,1063,1260,1458,1656,1854,2053,2251,2448,2647,2845,3044,3242,3439,3637,3835,4033,4232,4429,4628,4826],"pq":1,"am":"p"},{"id":1564,"c":"lbbb","a":76,"s":"M","dx":[["CLBBB","complete left bundle branch block",100]],"st":null,"hr":52,"ax":19,"r":[598,1174,1605,2281,2915,3507,4047,4612],"so":false,"p":[518,1094,1525,2201,2835,3427,3967,4532],"pq":0,"am":"p","pgen":1},{"id":18700,"c":"lbbb","a":73,"s":"F","dx":[["CLBBB","complete left bundle branch block",100]],"st":null,"hr":56,"ax":-20,"r":[548,1066,1572,2118,2498,3147,3713,4272,4794],"so":false,"p":[468,986,1492,2038,2418,3067,3633,4192,4714],"pq":0,"am":"p","pgen":1},{"id":8581,"c":"lbbb","a":">89","s":"F","dx":[["CLBBB","complete left bundle branch block",100]],"st":null,"hr":65,"ax":1,"r":[596,1328,1503,2053,2799,3529,3810,4273,4546,4905],"so":false,"p":[516,1248,1423,1973,2719,3449,3730,4193,4466,4825],"pq":1,"am":"p","pgen":1},{"id":21605,"c":"bifasc","a":64,"s":"M","dx":[["CRBBB","complete right bundle branch block",100],["LAFB","left anterior fascicular block",100],["SR","sinus rhythm",0]],"st":null,"hr":88,"ax":-78,"r":[210,552,894,1234,1579,1921,2261,2600,2951,3276,3615,3952,4290,4629],"so":false,"p":[65,407,749,1089,1434,1776,2116,2455,2806,3131,3470,3807,4145,4484],"pq":1,"am":"p"},{"id":16206,"c":"bifasc","a":82,"s":"F","dx":[["CRBBB","complete right bundle branch block",100],["LAFB","left anterior fascicular block",100],["SR","sinus rhythm",0]],"st":null,"hr":70,"ax":-69,"r":[553,981,1420,1851,2283,2708,3138,3570,3994,4420,4845],"so":false,"p":[428,856,1295,1726,2158,2583,3013,3445,3869,4295,4720],"pq":1,"am":"p"},{"id":21111,"c":"bifasc","a":77,"s":"M","dx":[["CRBBB","complete right bundle branch block",100],["LAFB","left anterior fascicular block",100],["SR","sinus rhythm",0]],"st":null,"hr":62,"ax":-107,"r":[439,919,1619,1948,2474,3202,3531,3916,4547,4915],"so":false,"p":[336,816,1516,1845,2371,3099,3428,3813,4444,4812],"pq":1,"am":"p"},{"id":2145,"c":"wpw","a":55,"s":"F","dx":[["WPW","Wolf-Parkinson-White syndrome",100]],"st":null,"hr":77,"ax":-25,"r":[328,720,1103,1496,1906,2313,2706,3082,3453,3839,4236,4627,4912],"so":false,"p":[248,640,1023,1416,1826,2233,2626,3002,3373,3759,4156,4547,4832],"pq":0,"am":"p","pgen":1},{"id":13415,"c":"wpw","a":21,"s":"M","dx":[["WPW","Wolf-Parkinson-White syndrome",100],["SARRH","sinus arrhythmia",0]],"st":null,"hr":51,"ax":112,"r":[474,1127,1667,2204,2798,3425,3905,4613],"so":false,"p":[371,1024,1564,2101,2695,3322,3802,4510],"pq":1,"am":"p"},{"id":10053,"c":"wpw","a":27,"s":"F","dx":[["WPW","Wolf-Parkinson-White syndrome",100],["SR","sinus rhythm",0]],"st":null,"hr":50,"ax":-29,"r":[622,1195,1791,2393,2969,3552,4148,4747],"so":false,"p":[542,1115,1711,2313,2889,3472,4068,4667],"pq":0,"am":"p","pgen":1},{"id":6240,"c":"wpw","a":71,"s":"M","dx":[["WPW","Wolf-Parkinson-White syndrome",100],["SR","sinus rhythm",0]],"st":null,"hr":79,"ax":-42,"r":[275,656,1034,1414,1794,2173,2552,2932,3306,3684,4060,4437,4811],"so":false,"p":[195,576,954,1334,1714,2093,2472,2852,3226,3604,3980,4357,4731],"pq":0,"am":"p","pgen":1},{"id":19330,"c":"wpw","a":69,"s":"M","dx":[["WPW","Wolf-Parkinson-White syndrome",100],["SR","sinus rhythm",0]],"st":null,"hr":62,"ax":34,"r":[630,1109,1594,2083,2576,3061,3563,4051,4537,4907],"so":false,"p":[542,1021,1506,1995,2488,2973,3475,3963,4449,4819],"pq":1,"am":"p"},{"id":9009,"c":"ivcd","a":87,"s":"M","dx":[["IVCD","non-specific intraventricular conduction disturbance (block)",100]],"st":null,"hr":73,"ax":16,"r":[431,859,1283,1709,2129,2544,2950,3361,3766,4170,4569,4885],"so":true,"p":[331,759,1183,1609,2029,2444,2850,3261,3666,4070,4469,4785],"pq":1,"am":"p"},{"id":9989,"c":"ivcd","a":64,"s":"F","dx":[["IVCD","non-specific intraventricular conduction disturbance (block)",100],["SR","sinus rhythm",0]],"st":null,"hr":67,"ax":-20,"r":[486,932,1386,1834,2271,2719,3184,3632,4081,4545,4947],"so":true,"p":[399,845,1299,1747,2184,2632,3097,3545,3994,4458,4860],"pq":1,"am":"p"},{"id":17083,"c":"inf_acute","a":73,"s":"F","dx":[["IMI","inferior myocardial infarction",50]],"st":"Stadium I","hr":58,"ax":-18,"r":[311,822,1339,1856,2375,2895,3420,3941,4455,4878],"so":false,"p":[221,732,1249,1766,2285,2805,3330,3851,4365,4788],"pq":1,"am":"p"},{"id":532,"c":"inf_acute","a":73,"s":"F","dx":[["IMI","inferior myocardial infarction",100],["SR","sinus rhythm",0]],"st":"Stadium I","hr":78,"ax":-64,"r":[445,825,1207,1982,2358,2741,3131,3516,3890,4273,4660],"so":false,"p":[356,736,1118,1893,2269,2652,3042,3427,3801,4184,4571],"pq":1,"am":"p"},{"id":19269,"c":"inf_acute","a":87,"s":"F","dx":[["IPMI","inferoposterior myocardial infarction",100],["SR","sinus rhythm",0]],"st":"Stadium I","hr":90,"ax":83,"r":[486,825,1120,1465,1794,2129,2454,2790,3115,3451,3776,4109,4435,4772],"so":false,"p":[406,745,1040,1385,1714,2049,2374,2710,3035,3371,3696,4029,4355,4692],"pq":0,"am":"p","pgen":1},{"id":8652,"c":"inf_acute","a":75,"s":"F","dx":[["ILMI","inferolateral myocardial infarction",100],["SR","sinus rhythm",0]],"st":"Stadium I","hr":70,"ax":-10,"r":[246,668,1096,1519,1942,2372,2802,3232,3664,4055,4519,4881],"so":false,"p":[172,594,1022,1445,1868,2298,2728,3158,3590,3981,4445,4807],"pq":1,"am":"p"},{"id":12841,"c":"inf_acute","a":52,"s":"M","dx":[["IMI","inferior myocardial infarction",100],["SR","sinus rhythm",0]],"st":"Stadium I","hr":59,"ax":-24,"r":[553,1055,1559,2062,2573,3081,3602,4111,4585],"so":false,"p":[475,977,1481,1984,2495,3003,3524,4033,4507],"pq":1,"am":"p"},{"id":2525,"c":"inf_acute","a":61,"s":"M","dx":[["IMI","inferior myocardial infarction",50],["ISCAN","ischemic in anterior leads",100]],"st":"Stadium I","hr":51,"ax":57,"r":[692,1286,1866,2457,3040,3624,4228,4795],"so":true,"p":[567,1161,1741,2332,2915,3499,4103,4670],"pq":1,"am":"p"},{"id":20139,"c":"ant_acute","a":82,"s":"M","dx":[["ASMI","anteroseptal myocardial infarction",100],["SR","sinus rhythm",0]],"st":"Stadium I","hr":84,"ax":85,"r":[401,763,1120,1479,1846,2207,2564,2919,3274,3636,3996,4352,4711],"so":false,"p":[306,668,1025,1384,1751,2112,2469,2824,3179,3541,3901,4257,4616],"pq":1,"am":"p"},{"id":11944,"c":"ant_acute","a":74,"s":"M","dx":[["ASMI","anteroseptal myocardial infarction",100],["SR","sinus rhythm",0]],"st":"Stadium I","hr":63,"ax":-27,"r":[492,926,1473,1988,2463,2929,3376,3938,4420,4882],"so":false,"p":[398,832,1379,1894,2369,2835,3282,3844,4326,4788],"pq":1,"am":"p"},{"id":15962,"c":"ant_acute","a":70,"s":"F","dx":[["ASMI","anteroseptal myocardial infarction",100],["SR","sinus rhythm",0]],"st":"Stadium I-II","hr":74,"ax":1,"r":[266,679,1094,1522,1928,2329,2723,3130,3538,3941,4354,4778],"so":false,"p":[186,599,1014,1442,1848,2249,2643,3050,3458,3861,4274,4698],"pq":1,"am":"p","pgen":1},{"id":4712,"c":"lat_mi","a":63,"s":"M","dx":[["LMI","lateral myocardial infarction",100]],"st":null,"hr":48,"ax":-35,"r":[171,807,1437,2053,2684,3316,3929,4563],"so":false,"p":[77,713,1343,1959,2590,3222,3835,4469],"pq":1,"am":"p"},{"id":14752,"c":"lat_mi","a":61,"s":"M","dx":[["ASMI","anteroseptal myocardial infarction",100],["LMI","lateral myocardial infarction",100]],"st":null,"hr":47,"ax":85,"r":[523,1171,1812,2457,3093,3731,4387,4921],"so":false,"p":[443,1091,1732,2377,3013,3651,4307,4841],"pq":0,"am":"p","pgen":1},{"id":10873,"c":"lat_mi","a":86,"s":"F","dx":[["LMI","lateral myocardial infarction",100],["SR","sinus rhythm",0]],"st":"Stadium III","hr":79,"ax":-12,"r":[379,757,1131,1508,1882,2257,2644,3026,3409,3791,4168,4548,4936],"so":false,"p":[299,677,1051,1428,1802,2177,2564,2946,3329,3711,4088,4468,4856],"pq":0,"am":"p","pgen":1},{"id":18198,"c":"lat_mi","a":62,"s":"M","dx":[["ASMI","anteroseptal myocardial infarction",100],["LMI","lateral myocardial infarction",100],["SR","sinus rhythm",0]],"st":"Stadium II","hr":59,"ax":-9,"r":[333,834,1350,1860,2365,2877,3382,3878,4394,4880],"so":false,"p":[266,767,1283,1793,2298,2810,3315,3811,4327,4813],"pq":1,"am":"p"},{"id":4824,"c":"post_mi","a":80,"s":"M","dx":[["IPMI","inferoposterior myocardial infarction",100]],"st":"Stadium II","hr":58,"ax":18,"r":[634,1152,1672,2193,2713,2947,3234,3754,4273,4792],"so":false,"p":[554,1072,1592,2113,2633,2867,3154,3674,4193,4712],"pq":0,"am":"p","pgen":1},{"id":5053,"c":"post_mi","a":83,"s":"F","dx":[["IPLMI","inferoposterolateral myocardial infarction",100]],"st":null,"hr":73,"ax":-4,"r":[484,882,1276,1661,2039,2462,2935,3372,3693,4241,4673],"so":false,"p":[411,809,1203,1588,1966,2389,2862,3299,3620,4168,4600],"pq":1,"am":"p"},{"id":19300,"c":"post_mi","a":88,"s":"F","dx":[["IPMI","inferoposterior myocardial infarction",100]],"st":null,"hr":83,"ax":1,"r":[443,806,1169,1532,1899,2263,2625,2986,3348,3711,4072,4433,4794],"so":false,"p":[363,726,1089,1452,1819,2183,2545,2906,3268,3631,3992,4353,4714],"pq":0,"am":"p","pgen":1},{"id":2425,"c":"post_mi","a":86,"s":"M","dx":[["PMI","posterior myocardial infarction",50],["AFIB","atrial fibrillation",0]],"st":"Stadium I","hr":135,"ax":-11,"r":[197,531,769,988,1211,1435,1667,1891,2113,2458,2679,2898,3106,3333,3682,3901,4112,4319,4519,4730,4947],"so":false,"p":[],"pq":1,"am":"af"},{"id":8169,"c":"post_mi","a":82,"s":"M","dx":[["IPLMI","inferoposterolateral myocardial infarction",50],["AFIB","atrial fibrillation",0]],"st":null,"hr":117,"ax":19,"r":[386,679,936,1176,1440,1755,2002,2254,2770,3033,3277,3519,3763,4017,4520,4920],"so":false,"p":[],"pq":1,"am":"af"},{"id":290,"c":"inf_old","a":73,"s":"M","dx":[["IMI","inferior myocardial infarction",100],["SR","sinus rhythm",0]],"st":"Stadium III","hr":70,"ax":-30,"r":[494,926,1358,1792,2224,2659,3085,3498,3914,4338,4765],"so":false,"p":[411,843,1275,1709,2141,2576,3002,3415,3831,4255,4682],"pq":1,"am":"p"},{"id":7781,"c":"inf_old","a":58,"s":"M","dx":[["IMI","inferior myocardial infarction",100],["SR","sinus rhythm",0]],"st":"Stadium III","hr":61,"ax":16,"r":[467,952,1445,1936,2428,2922,3413,3905,4395,4885],"so":false,"p":[388,873,1366,1857,2349,2843,3334,3826,4316,4806],"pq":1,"am":"p"},{"id":1373,"c":"inf_old","a":58,"s":"M","dx":[["IMI","inferior myocardial infarction",100],["SR","sinus rhythm",0]],"st":"Stadium III","hr":55,"ax":-34,"r":[357,899,1447,1989,2521,3061,3604,4139,4686],"so":false,"p":[276,818,1366,1908,2440,2980,3523,4058,4605],"pq":1,"am":"p"},{"id":4106,"c":"inf_old","a":60,"s":"M","dx":[["IMI","inferior myocardial infarction",100],["SR","sinus rhythm",0]],"st":"Stadium III","hr":55,"ax":-3,"r":[485,1035,1577,2112,2620,3120,3701,4279,4836],"so":false,"p":[405,955,1497,2032,2540,3040,3621,4199,4756],"pq":0,"am":"p","pgen":1},{"id":12209,"c":"ant_old","a":81,"s":"M","dx":[["ASMI","anteroseptal myocardial infarction",100],["PVC","ventricular premature complex",100]],"st":"Stadium III","hr":67,"ax":54,"r":[557,1003,1401,1893,2346,2733,3239,3690,4091,4573,4923],"so":false,"p":[460,906,1304,1796,2249,2636,3142,3593,3994,4476,4826],"pq":1,"am":"p"},{"id":6795,"c":"ant_old","a":50,"s":"M","dx":[["ASMI","anteroseptal myocardial infarction",100],["SR","sinus rhythm",0]],"st":"Stadium III","hr":59,"ax":10,"r":[432,939,1436,1951,2447,2959,3486,4003,4516,4922],"so":false,"p":[363,870,1367,1882,2378,2890,3417,3934,4447,4853],"pq":1,"am":"p"},{"id":18021,"c":"ant_old","a":78,"s":"F","dx":[["ASMI","anteroseptal myocardial infarction",100],["SR","sinus rhythm",0]],"st":"Stadium III","hr":76,"ax":-57,"r":[439,836,1222,1614,2013,2413,2805,3200,3602,3998,4397,4793],"so":false,"p":[353,750,1136,1528,1927,2327,2719,3114,3516,3912,4311,4707],"pq":1,"am":"p"},{"id":3117,"c":"ant_old","a":77,"s":"F","dx":[["ASMI","anteroseptal myocardial infarction",100],["SR","sinus rhythm",0]],"st":"Stadium III","hr":67,"ax":4,"r":[414,840,1310,1733,2219,2642,3111,3516,3995,4408,4893],"so":false,"p":[305,731,1201,1624,2110,2533,3002,3407,3886,4299,4784],"pq":1,"am":"p"},{"id":1842,"c":"isc","a":87,"s":"F","dx":[["ISCIN","ischemic in inferior leads",100]],"st":null,"hr":72,"ax":52,"r":[171,598,1031,1456,1871,2285,2697,3115,3528,3925,4319,4716],"so":false,"p":[106,533,966,1391,1806,2220,2632,3050,3463,3860,4254,4651],"pq":1,"am":"p"},{"id":186,"c":"isc","a":60,"s":"F","dx":[["ISCAS","ischemic in anteroseptal leads",100]],"st":null,"hr":48,"ax":14,"r":[496,712,1117,1744,2341,2978,3605,4216,4867],"so":false,"p":[406,622,1027,1654,2251,2888,3515,4126,4777],"pq":1,"am":"p"},{"id":5879,"c":"isc","a":60,"s":"M","dx":[["ISCIL","ischemic in inferolateral leads",100]],"st":null,"hr":49,"ax":47,"r":[795,1342,1960,2650,3221,3834,4507,4904],"so":false,"p":[683,1230,1848,2538,3109,3722,4395,4792],"pq":1,"am":"p"},{"id":416,"c":"isc","a":35,"s":"M","dx":[["ISCIL","ischemic in inferolateral leads",100]],"st":null,"hr":60,"ax":61,"r":[552,1222,1471,1797,2269,2706,3216,3785,4392,4893],"so":false,"p":[471,1141,1390,1716,2188,2625,3135,3704,4311,4812],"pq":1,"am":"p"},{"id":5911,"c":"lvh","a":65,"s":"M","dx":[["LVH","left ventricular hypertrophy",100]],"st":null,"hr":106,"ax":54,"r":[220,509,796,1082,1368,1654,1939,2223,2506,2790,3073,3356,3640,3925,4209,4492,4776],"so":false,"p":[125,414,701,987,1273,1559,1844,2128,2411,2695,2978,3261,3545,3830,4114,4397,4681],"pq":1,"am":"p"},{"id":9089,"c":"lvh","a":75,"s":"M","dx":[["LVH","left ventricular hypertrophy",100]],"st":null,"hr":61,"ax":49,"r":[248,741,1231,1726,2212,2696,3204,3722,4227,4738],"so":false,"p":[133,626,1116,1611,2097,2581,3089,3607,4112,4623],"pq":1,"am":"p"},{"id":13837,"c":"lvh","a":64,"s":"F","dx":[["LVH","left ventricular hypertrophy",100],["SR","sinus rhythm",0]],"st":null,"hr":74,"ax":-11,"r":[545,959,1366,1794,2203,2598,2990,3393,3790,4187,4607],"so":false,"p":[465,879,1286,1714,2123,2518,2910,3313,3710,4107,4527],"pq":0,"am":"p","pgen":1},{"id":138,"c":"lvh","a":74,"s":"F","dx":[["LVH","left ventricular hypertrophy",100],["SR","sinus rhythm",0]],"st":null,"hr":93,"ax":39,"r":[369,691,1015,1339,1663,1988,2313,2634,2957,3282,3607,3929,4250,4570,4894],"so":false,"p":[242,564,888,1212,1536,1861,2186,2507,2830,3155,3480,3802,4123,4443,4767],"pq":1,"am":"p"},{"id":1370,"c":"lvh","a":27,"s":"F","dx":[["LVH","left ventricular hypertrophy",100],["SR","sinus rhythm",0]],"st":null,"hr":67,"ax":15,"r":[155,607,1054,1503,1953,2401,2842,3285,3735,4191,4645],"so":false,"p":[56,508,955,1404,1854,2302,2743,3186,3636,4092,4546],"pq":1,"am":"p"},{"id":2417,"c":"rvh","a":78,"s":"F","dx":[["RVH","right ventricular hypertrophy",100],["SR","sinus rhythm",0]],"st":null,"hr":91,"ax":57,"r":[204,529,855,1185,1508,1829,2157,2488,2818,3145,3478,3821,4157,4489,4824],"so":false,"p":[124,449,775,1105,1428,1749,2077,2408,2738,3065,3398,3741,4077,4409,4744],"pq":0,"am":"p","pgen":1},{"id":2493,"c":"rvh","a":57,"s":"M","dx":[["CRBBB","complete right bundle branch block",100],["RVH","right ventricular hypertrophy",100]],"st":null,"hr":43,"ax":131,"r":[824,1531,2231,2918,3629,4324,4936],"so":false,"p":[744,1451,2151,2838,3549,4244,4856],"pq":0,"am":"p","pgen":1},{"id":16462,"c":"rvh","a":78,"s":"M","dx":[["IRBBB","incomplete right bundle branch block",100],["RVH","right ventricular hypertrophy",100]],"st":null,"hr":84,"ax":131,"r":[450,812,1175,1536,1898,2253,2611,2968,3327,3688,4045,4404,4763],"so":false,"p":[370,732,1095,1456,1818,2173,2531,2888,3247,3608,3965,4324,4683],"pq":0,"am":"p","pgen":1},{"id":6548,"c":"rvh","a":">89","s":"F","dx":[["IRBBB","incomplete right bundle branch block",100],["RVH","right ventricular hypertrophy",50],["SR","sinus rhythm",0]],"st":null,"hr":60,"ax":-39,"r":[222,719,1215,1706,2200,2698,3196,3691,4191,4695],"so":false,"p":[142,639,1135,1626,2120,2618,3116,3611,4111,4615],"pq":1,"am":"p","pgen":1},{"id":7857,"c":"lae","a":73,"s":"F","dx":[["LAO/LAE","left atrial overload/enlargement",100],["SBRAD","sinus bradycardia",0]],"st":null,"hr":56,"ax":0,"r":[320,864,1393,1940,2470,3016,3552,4088,4649],"so":false,"p":[228,772,1301,1848,2378,2924,3460,3996,4557],"pq":1,"am":"p"},{"id":6926,"c":"lae","a":78,"s":"F","dx":[["LAO/LAE","left atrial overload/enlargement",100],["SR","sinus rhythm",0]],"st":null,"hr":74,"ax":-72,"r":[225,624,1023,1419,1820,2223,2633,3044,3455,3869,4280,4687],"so":false,"p":[148,547,946,1342,1743,2146,2556,2967,3378,3792,4203,4610],"pq":1,"am":"p"},{"id":6685,"c":"lae","a":74,"s":"M","dx":[["LAO/LAE","left atrial overload/enlargement",100],["SR","sinus rhythm",0]],"st":null,"hr":80,"ax":-25,"r":[175,548,862,1303,1608,1977,2355,2733,3108,3546,3924,4212,4668],"so":false,"p":[48,421,735,1176,1481,1850,2228,2606,2981,3419,3797,4085,4541],"pq":1,"am":"p"},{"id":5231,"c":"rae","a":55,"s":"F","dx":[["RAO/RAE","right atrial overload/enlargement",100],["SR","sinus rhythm",0]],"st":null,"hr":84,"ax":-18,"r":[373,717,1066,1428,1790,2151,2517,2876,3241,3601,3945,4279,4609,4894],"so":false,"p":[308,652,1001,1363,1725,2086,2452,2811,3176,3536,3880,4214,4544,4829],"pq":1,"am":"p"},{"id":1670,"c":"rae","a":45,"s":"F","dx":[["STACH","sinus tachycardia",50],["RAO/RAE","right atrial overload/enlargement",100]],"st":null,"hr":124,"ax":89,"r":[268,477,766,1007,1253,1438,1762,1971,2259,2503,2748,2935,3273,3479,3644,4044,4257,4551,4774],"so":false,"p":[201,410,699,940,1186,1371,1695,1904,2192,2436,2681,2868,3206,3412,3577,3977,4190,4484,4707],"pq":1,"am":"p"},{"id":8177,"c":"rae","a":76,"s":"F","dx":[["RAO/RAE","right atrial overload/enlargement",100],["SR","sinus rhythm",0]],"st":null,"hr":74,"ax":65,"r":[284,598,998,1428,1887,2260,2686,3111,3506,3928,4334,4719],"so":true,"p":[204,518,918,1348,1807,2180,2606,3031,3426,3848,4254,4639],"pq":1,"am":"p","pgen":1},{"id":12632,"c":"lvolt","a":61,"s":"F","dx":[["AFIB","atrial fibrillation",100],["LVOLT","low QRS voltages in the frontal and horizontal leads",0]],"st":null,"hr":105,"ax":16,"r":[344,579,951,1228,1465,1823,2110,2345,2629,2931,3217,3452,3818,4107,4346,4726],"so":false,"p":[],"pq":0,"am":"af"},{"id":13961,"c":"lvolt","a":62,"s":"M","dx":[["NORM","normal ECG",100],["LVOLT","low QRS voltages in the frontal and horizontal leads",0],["SR","sinus rhythm",0]],"st":null,"hr":52,"ax":-66,"r":[163,747,1327,1898,2477,3044,3622,4205,4787],"so":false,"p":[80,664,1244,1815,2394,2961,3539,4122,4704],"pq":1,"am":"p"},{"id":4304,"c":"lvolt","a":51,"s":"F","dx":[["NORM","normal ECG",100],["LVOLT","low QRS voltages in the frontal and horizontal leads",0],["SR","sinus rhythm",0]],"st":null,"hr":57,"ax":64,"r":[534,1039,1555,2082,2620,3150,3671,4204,4747],"so":false,"p":[455,960,1476,2003,2541,3071,3592,4125,4668],"pq":1,"am":"p"},{"id":11916,"c":"lqt","a":55,"s":"F","dx":[["LNGQT","long QT-interval",100],["SR","sinus rhythm",0]],"st":null,"hr":96,"ax":-102,"r":[208,526,846,1167,1492,1817,2133,2446,2757,3066,3376,3685,3991,4292,4593,4892],"so":false,"p":[138,456,776,1097,1422,1747,2063,2376,2687,2996,3306,3615,3921,4222,4523,4822],"pq":1,"am":"p"},{"id":9894,"c":"lqt","a":88,"s":"F","dx":[["LNGQT","long QT-interval",100],["SR","sinus rhythm",0]],"st":null,"hr":91,"ax":-3,"r":[202,534,864,1194,1524,1855,2186,2516,2846,3177,3508,3838,4168,4499,4831],"so":false,"p":[99,431,761,1091,1421,1752,2083,2413,2743,3074,3405,3735,4065,4396,4728],"pq":1,"am":"p"},{"id":13838,"c":"lqt","a":54,"s":"F","dx":[["LNGQT","long QT-interval",100],["SR","sinus rhythm",0]],"st":null,"hr":103,"ax":-2,"r":[301,589,879,1170,1461,1747,2032,2318,2608,2898,3190,3483,3776,4069,4364,4660,4881],"so":false,"p":[220,508,798,1089,1380,1666,1951,2237,2527,2817,3109,3402,3695,3988,4283,4579,4800],"pq":1,"am":"p"},{"id":320,"c":"lqt","a":79,"s":"M","dx":[["LNGQT","long QT-interval",100],["SR","sinus rhythm",0]],"st":null,"hr":55,"ax":-33,"r":[531,1069,1616,2167,2726,3263,3809,4373,4908],"so":false,"p":[424,962,1509,2060,2619,3156,3702,4266,4801],"pq":1,"am":"p"},{"id":6479,"c":"lqt","a":79,"s":"F","dx":[["LNGQT","long QT-interval",100],["NT_","non-specific T-wave changes",0],["SR","sinus rhythm",0]],"st":null,"hr":62,"ax":-24,"r":[628,1109,1594,2072,2553,3029,3510,3984,4465,4937],"so":false,"p":[483,964,1449,1927,2408,2884,3365,3839,4320,4792],"pq":1,"am":"p"},{"id":7909,"c":"dig","a":60,"s":"M","dx":[["DIG","digitalis-effect",100],["AFIB","atrial fibrillation",0]],"st":null,"hr":89,"ax":8,"r":[388,765,1153,1545,1914,2252,2579,2856,3147,3476,3898,4260,4595,4916],"so":false,"p":[],"pq":0,"am":"af"},{"id":16750,"c":"dig","a":87,"s":"F","dx":[["DIG","digitalis-effect",100],["AFIB","atrial fibrillation",0]],"st":null,"hr":140,"ax":-4,"r":[279,499,730,949,1180,1398,1599,1807,2002,2266,2481,2684,2860,3039,3251,3470,3713,3904,4204,4393,4565,4866],"so":false,"p":[],"pq":1,"am":"af"},{"id":19926,"c":"dig","a":85,"s":"F","dx":[["DIG","digitalis-effect",100],["STACH","sinus tachycardia",0]],"st":null,"hr":106,"ax":62,"r":[355,630,914,1190,1475,1750,2035,2311,2598,2875,3162,3442,3731,4010,4293,4576,4864],"so":false,"p":[300,575,859,1135,1420,1695,1980,2256,2543,2820,3107,3387,3676,3955,4238,4521,4809],"pq":1,"am":"p"},{"id":2205,"c":"pace","a":84,"s":"F","dx":[["PACE","normal functioning artificial pacemaker",100]],"st":null,"hr":72,"ax":-132,"r":[425,831,1243,1664,2081,2508,2924,3331,3748,4164,4582],"so":false,"p":[345,751,1163,1584,2001,2428,2844,3251,3668,4084,4502],"pq":1,"am":"p","pgen":1},{"id":14518,"c":"pace","a":87,"s":"M","dx":[["PACE","normal functioning artificial pacemaker",100]],"st":null,"hr":69,"ax":-68,"r":[572,1004,1434,1864,2527,2778,3236,3634,4090,4836],"so":false,"p":[492,924,1354,1784,2447,2698,3156,3554,4010,4756],"pq":0,"am":"p","pgen":1},{"id":144,"c":"pace","a":81,"s":"M","dx":[["PACE","normal functioning artificial pacemaker",100]],"st":null,"hr":74,"ax":-88,"r":[1836,2222,2648],"so":false,"p":[1691,2077,2503],"pq":1,"am":"p"},{"id":14609,"c":"pace","a":69,"s":"F","dx":[["PACE","normal functioning artificial pacemaker",100]],"st":null,"hr":70,"ax":-74,"r":[240,1069,1498,1963,2384,2813,3214,3671,4071,4529,4930],"so":false,"p":[160,989,1418,1883,2304,2733,3134,3591,3991,4449,4850],"pq":1,"am":"p","pgen":1},{"id":2486,"c":"pace","a":">89","s":"F","dx":[["PACE","normal functioning artificial pacemaker",100]],"st":null,"hr":70,"ax":-5,"r":[201,662,1091,1521,1945,2374,2733,3163,3625,4053,4483,4913],"so":false,"p":[121,582,1011,1441,1865,2294,2653,3083,3545,3973,4403,4833],"pq":0,"am":"p","pgen":1}]}</script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+const CATS={
+ normal:{g:'Rhythm',n:'Normal ECG',s:'Normal',
+  f:[['Rate, rhythm','60–100, sinus P upright in I and II before every QRS'],['Axis','−30° to +90°'],['Intervals','PR 120–200 ms · QRS < 120 ms · QTc < 450 (men) / 460 (women)'],['Progression','R grows V1 → V6, transition V3–V4']],
+  look:'Use the same order every time: rate, rhythm, axis, intervals, hypertrophy, ischemia. Normal variation is wide; compare several of these.',
+  clin:'The baseline every other pattern is measured against.'},
+ sbrad:{g:'Rhythm',n:'Sinus bradycardia',s:'Sinus brady',
+  f:[['Rate','< 60 bpm'],['P waves','Sinus: upright in I, II; one per QRS'],['Quick rate','300 ÷ large boxes between R waves'],['Intervals','Usually normal']],
+  look:'More than five large boxes between beats with a normal P in front of each QRS.',
+  clin:'Normal in athletes and sleep. Think beta-blockers, hypothyroidism, inferior ischemia. Treat only if symptomatic; atropine first.'},
+ stach:{g:'Rhythm',n:'Sinus tachycardia',s:'Sinus tach',
+  f:[['Rate','> 100 bpm'],['P waves','Sinus axis; may sit on the preceding T'],['Onset','Gradual, not abrupt'],['QRS','Narrow']],
+  look:'Find the P wave hiding in the end of the T wave; its axis is still sinus.',
+  clin:'A sign, not a diagnosis: pain, fever, hypovolemia, hypoxia, anemia, PE, thyrotoxicosis.'},
+ sarrh:{g:'Rhythm',n:'Sinus arrhythmia',s:'Sinus arrhythmia',
+  f:[['R–R','Varies by > 0.12 s, cycling with breathing'],['P waves','Identical morphology throughout'],['PR','Constant'],['Rate','Usually normal range']],
+  look:'Calipers on consecutive R–R intervals: they lengthen and shorten smoothly, never abruptly.',
+  clin:'Normal, especially in the young; it reflects healthy vagal tone.'},
+ afib:{g:'Rhythm',n:'Atrial fibrillation',s:'AFib',
+  f:[['Rhythm','Irregularly irregular'],['P waves','Absent; fibrillatory baseline'],['Best seen','V1 and inferior leads'],['QRS','Narrow unless aberrant or pre-existing block']],
+  look:'Measure three R–R intervals in a row: no two match and no organized atrial activity repeats.',
+  clin:'Rate vs rhythm control; CHA₂DS₂-VASc for anticoagulation.'},
+ aflt:{g:'Rhythm',n:'Atrial flutter',s:'Flutter',
+  f:[['Atrial rate','~250–350/min'],['F waves','Sawtooth in II, III, aVF; discrete in V1'],['Conduction','Often 2:1 (ventricular ~150), may vary'],['QRS','Narrow']],
+  look:'A regular narrow rate near 150 should make you hunt for a second flutter wave buried in the QRS or T.',
+  clin:'Stroke risk and anticoagulation as in AF. Cardioversion and ablation work well.'},
+ svt:{g:'Rhythm',n:'Supraventricular tachycardia',s:'SVT',
+  f:[['Rate','150–250'],['Rhythm','Regular, abrupt onset and offset'],['P waves','Hidden or retrograde just after the QRS'],['QRS','Narrow']],
+  look:'Look for a pseudo-r′ in V1 or pseudo-S in II: a retrograde P riding the end of the QRS.',
+  clin:'Stable: vagal maneuvers, then adenosine. Unstable: synchronized cardioversion.'},
+ pac:{g:'Rhythm',n:'Premature atrial complexes',s:'PACs',
+  f:[['Timing','Early beat'],['P wave','Present but different from sinus'],['QRS','Narrow (unless aberrant)'],['Pause','Usually non-compensatory']],
+  look:'Compare the early beat\'s P wave with the sinus P; then measure the pause around it.',
+  clin:'Usually benign; frequent PACs can trigger AF.'},
+ pvc:{g:'Rhythm',n:'Premature ventricular complexes',s:'PVCs',
+  f:[['Timing','Early, wide beat'],['P wave','None before it'],['ST–T','Opposite the QRS'],['Pause','Fully compensatory']],
+  look:'Calipers: the R–R across a PVC equals two sinus cycles because the sinus node keeps its own time.',
+  clin:'Check K⁺, Mg²⁺, ischemia. High burden (> 10%) can cause cardiomyopathy.'},
+ bigu:{g:'Rhythm',n:'Bigeminy',s:'Bigeminy',
+  f:[['Pattern','Every other beat is premature'],['Origin','PVC or PAC; this dataset label does not say which'],['Pulse','Can be half the ECG rate if early beats don\'t perfuse'],['Check','Morphology of the early beat']],
+  look:'Decide for yourself: is the early beat wide with no P (ventricular) or narrow with an odd P (atrial)?',
+  clin:'Pulse oximeters and palpation may undercount the rate.'},
+ pace:{g:'Rhythm',n:'Paced rhythm',s:'Paced',
+  f:[['Spikes','Sharp pacing artifact before P and/or QRS'],['Ventricular pacing','Wide QRS, LBBB-like from the RV'],['ST–T','Discordant, expected'],['Check','Every spike captures']],
+  look:'Spikes can be tiny on digital, filtered recordings; zoom in at the start of each QRS.',
+  clin:'Ischemia is hard to read; modified Sgarbossa criteria apply.'},
+ avb1:{g:'AV block',n:'First-degree AV block',s:'1° AVB',
+  f:[['PR','> 200 ms, constant'],['Conduction','Every P conducts'],['QRS','Usually narrow'],['Rate','Any']],
+  look:'Use the calipers: P onset to QRS onset more than one large box.',
+  clin:'A delay, not a true block. Review AV-nodal drugs.'},
+ avb2:{g:'AV block',n:'Second-degree AV block',s:'2° AVB',
+  f:[['Conduction','Some P waves not followed by QRS'],['Mobitz I','PR lengthens until a beat drops'],['Mobitz II','PR constant, then a sudden drop'],['2:1','Cannot be typed from one strip']],
+  look:'March out the P waves with calipers, then compare the PR before and after each dropped beat.',
+  clin:'Mobitz II is infranodal and warrants pacing. The dataset label does not specify the type.'},
+ avb3:{g:'AV block',n:'Third-degree (complete) AV block',s:'3° AVB',
+  f:[['Dissociation','P waves and QRS complexes independent'],['Rates','Atrial faster than ventricular'],['Escape','Narrow (junctional) or wide (ventricular)'],['PR','Varies at random']],
+  look:'Set the calipers to one P–P interval and walk it across the strip: P waves land through QRS and T waves.',
+  clin:'Pacing: transcutaneous as a bridge, then permanent.'},
+ lafb:{g:'Conduction',n:'Left anterior fascicular block',s:'LAFB',
+  f:[['Axis','−45° to −90°'],['I, aVL','qR'],['II, III, aVF','rS'],['QRS','< 120 ms']],
+  look:'Lead II mostly negative is the giveaway: the axis is past −30°.',
+  clin:'Common with hypertension and CAD. With RBBB it is bifascicular block.'},
+ lpfb:{g:'Conduction',n:'Left posterior fascicular block',s:'LPFB',
+  f:[['Axis','+90° to +180°'],['I, aVL','rS'],['III, aVF','qR'],['Exclude','RVH, lateral MI, thin body habitus']],
+  look:'A diagnosis of exclusion: right axis without another explanation.',
+  clin:'Rare in isolation; usually means significant conduction disease.'},
+ irbbb:{g:'Conduction',n:'Incomplete right bundle branch block',s:'Incomplete RBBB',
+  f:[['QRS','110–119 ms'],['V1','rSR′'],['I, V6','Small terminal S'],['Significance','Often normal']],
+  look:'Same shape as RBBB in V1 but the QRS is under three small boxes.',
+  clin:'Common normal variant. Also seen with ASD and RV volume load.'},
+ rbbb:{g:'Conduction',n:'Right bundle branch block',s:'RBBB',
+  f:[['QRS','≥ 120 ms'],['V1–V2','rsR′ (rabbit ears)'],['I, V5–V6','Wide, slurred S'],['ST–T','Secondary T inversion V1–V3']],
+  look:'Terminal forces point right and anterior: late R′ in V1, broad S in the left-facing leads.',
+  clin:'Can be normal. New RBBB with chest pain or hypoxia: think PE.'},
+ lbbb:{g:'Conduction',n:'Left bundle branch block',s:'LBBB',
+  f:[['QRS','≥ 120 ms'],['I, aVL, V5–V6','Broad, notched R; no septal q'],['V1–V2','QS or rS'],['ST–T','Discordant to the QRS']],
+  look:'Septum activates right-to-left, so the small septal q in I and V6 disappears.',
+  clin:'Masks ischemia; use Sgarbossa criteria.'},
+ bifasc:{g:'Conduction',n:'Bifascicular block (RBBB + LAFB)',s:'RBBB + LAFB',
+  f:[['QRS','≥ 120 ms with RBBB pattern'],['Axis','Left, beyond −45°'],['II, III, aVF','rS'],['Risk','Progression to complete block']],
+  look:'Read RBBB in V1 first, then check the limb leads for the left axis.',
+  clin:'Syncope with bifascicular block warrants evaluation for pacing.'},
+ wpw:{g:'Conduction',n:'Wolff–Parkinson–White pattern',s:'WPW',
+  f:[['PR','< 120 ms'],['Delta wave','Slurred QRS upstroke'],['QRS','> 110 ms'],['ST–T','Secondary changes']],
+  look:'Zoom into the QRS onset: it climbs slowly before the sharp part, which shortens the PR.',
+  clin:'Avoid AV-nodal blockers in pre-excited AF. Ablation is curative.'},
+ ivcd:{g:'Conduction',n:'Nonspecific intraventricular conduction delay',s:'IVCD',
+  f:[['QRS','> 110 ms'],['Morphology','Meets neither RBBB nor LBBB criteria'],['Causes','Cardiomyopathy, drugs, hyperkalemia'],['Compare','With the bundle branch block examples']],
+  look:'Wide QRS that doesn\'t fit either bundle branch pattern.',
+  clin:'Often a marker of myocardial disease.'},
+ inf_acute:{g:'Infarction & ischemia',n:'Inferior MI, acute stage',s:'Inferior MI (acute)',
+  f:[['ST ↑','II, III, aVF'],['Reciprocal','ST ↓ in I, aVL'],['Q waves','May already be forming'],['Next step','Right-sided V4R for RV involvement']],
+  look:'Compare III with II: III > II and aVL depression point to the RCA.',
+  clin:'Cath lab. With RV involvement avoid nitrates; give fluids for hypotension.'},
+ ant_acute:{g:'Infarction & ischemia',n:'Anterior / anteroseptal MI, acute stage',s:'Anterior MI (acute)',
+  f:[['ST ↑','V1–V4 (± I, aVL)'],['Reciprocal','ST ↓ inferior'],['R waves','Loss of R in V1–V3'],['Culprit','LAD']],
+  look:'Follow the ST segments across V1 → V6 and note where the elevation stops.',
+  clin:'Largest territory at risk; door-to-balloon under 90 minutes.'},
+ lat_mi:{g:'Infarction & ischemia',n:'Lateral MI',s:'Lateral MI',
+  f:[['Leads','I, aVL, V5–V6'],['Findings','Q waves and/or ST–T changes'],['Culprit','LCx or diagonal'],['Often','Combined with anterior or inferior']],
+  look:'Small q waves in I and aVL can be normal; look for width ≥ 40 ms or ST–T change.',
+  clin:'High lateral MI is easy to miss; aVL is often the first clue.'},
+ post_mi:{g:'Infarction & ischemia',n:'Posterior MI',s:'Posterior MI',
+  f:[['V1–V2','Tall, broad R (R/S > 1)'],['ST','Depression V1–V3 when acute'],['T','Upright in V1–V2'],['Usually','With inferior or lateral MI']],
+  look:'Flip V1–V3 upside down in your head: the mirror image of a posterior Q wave and ST elevation.',
+  clin:'Confirm with V7–V9. Treat acute posterior MI as a STEMI.'},
+ inf_old:{g:'Infarction & ischemia',n:'Inferior MI, old',s:'Inferior MI (old)',
+  f:[['Q waves','II, III, aVF (≥ 40 ms or ≥ 25% of R)'],['ST','Back to baseline'],['T','May stay inverted'],['Stage','Dataset stage III']],
+  look:'A Q in III alone can be normal; look for it in II and aVF too.',
+  clin:'Evidence of prior infarction; secondary prevention.'},
+ ant_old:{g:'Infarction & ischemia',n:'Anteroseptal MI, old',s:'Anterior MI (old)',
+  f:[['Q/QS','V1–V3'],['R progression','Poor'],['ST','Resolved (persistent ↑ suggests aneurysm)'],['Stage','Dataset stage III']],
+  look:'Poor R progression alone can also come from lead placement or LVH; compare with the normal examples.',
+  clin:'Prior LAD infarction; assess LV function.'},
+ isc:{g:'Infarction & ischemia',n:'Ischemic ST–T changes',s:'Ischemic ST–T',
+  f:[['ST','Horizontal or downsloping depression'],['T waves','Inversion in a territory'],['Distribution','Named by the dataset: inferior, lateral, anterior'],['Context','Compare with old tracings']],
+  look:'Measure ST depression 80 ms after the J point against the PR baseline.',
+  clin:'NSTE-ACS workup: troponin and serial ECGs.'},
+ lvh:{g:'Chamber & other',n:'Left ventricular hypertrophy',s:'LVH',
+  f:[['Sokolow–Lyon','S V1 + R V5 or V6 ≥ 35 mm'],['Cornell','R aVL + S V3 > 28 mm (men), > 20 mm (women)'],['Strain','Lateral ST ↓ with asymmetric T inversion'],['Axis','Often leftward']],
+  look:'Use the calipers in mV: the voltage is easy to see because the complexes run into the next row.',
+  clin:'Hypertension and aortic stenosis are the usual causes. ECG is specific but insensitive.'},
+ rvh:{g:'Chamber & other',n:'Right ventricular hypertrophy',s:'RVH',
+  f:[['Axis','Right'],['V1','Dominant R (R/S > 1)'],['V5–V6','Deep S'],['Strain','ST ↓ and T inversion V1–V3']],
+  look:'Several of these records also carry an RBBB label; separate conduction from voltage.',
+  clin:'Pulmonary hypertension, congenital heart disease, chronic lung disease.'},
+ lae:{g:'Chamber & other',n:'Left atrial enlargement',s:'LA enlargement',
+  f:[['P in II','≥ 120 ms, notched (P mitrale)'],['P in V1','Deep terminal negative portion (≥ 1 mm × 40 ms)'],['Causes','Mitral disease, LVH, diastolic dysfunction'],['Rhythm','Often sinus']],
+  look:'Calipers on the negative half of the P in V1: one small box deep and one small box wide.',
+  clin:'A marker of raised LA pressure; AF risk.'},
+ rae:{g:'Chamber & other',n:'Right atrial enlargement',s:'RA enlargement',
+  f:[['P in II','≥ 2.5 mm tall (P pulmonale)'],['P in V1','Initial positive ≥ 1.5 mm'],['Causes','Pulmonary hypertension, COPD, tricuspid disease'],['Duration','Normal']],
+  look:'Measure P amplitude in II, III, aVF against the 2.5-box line.',
+  clin:'Suggests RA pressure or volume load.'},
+ lvolt:{g:'Chamber & other',n:'Low QRS voltage',s:'Low voltage',
+  f:[['Limb leads','All QRS < 5 mm'],['Precordial','All QRS < 10 mm'],['Causes','Effusion, obesity, COPD, infiltration, hypothyroidism'],['With tachycardia','Think tamponade']],
+  look:'Check every limb lead; one large complex excludes the limb criterion.',
+  clin:'Echo to exclude effusion; consider amyloid with LVH on echo.'},
+ lqt:{g:'Chamber & other',n:'Long QT',s:'Long QT',
+  f:[['QTc','> 450 ms (men), > 460 ms (women)'],['High risk','> 500 ms'],['Measure','II or V5, T end by tangent'],['Correct','Bazett QT/√RR (overcorrects at fast rates)']],
+  look:'Use the calipers: QT from QRS onset to T end, then divide by √RR in seconds.',
+  clin:'Review drugs, K⁺, Mg²⁺, Ca²⁺; congenital LQTS. Torsades risk.'},
+ dig:{g:'Chamber & other',n:'Digitalis effect',s:'Digoxin effect',
+  f:[['ST','Scooped, “reverse tick” depression'],['QT','Short'],['T','Flattened or inverted'],['Meaning','Drug effect, not toxicity']],
+  look:'Lateral leads: the ST sags downward and curves into the T.',
+  clin:'Toxicity shows as arrhythmias (bidirectional VT, atrial tachycardia with block), not this pattern.'},
+};
+const GROUPS_REAL=['Rhythm','AV block','Conduction','Infarction & ischemia','Chamber & other'];
+
+(()=>{
+const $=id=>document.getElementById(id);
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const sm=x=>x<=0?0:x>=1?1:x*x*(3-2*x);
+const nrm=d=>{const m=Math.hypot(d[0],d[1],d[2])||1;return [d[0]/m,d[1]/m,d[2]/m]};
+const MAN=JSON.parse($('manifest').textContent);
+const FS=500,N=5000,DUR=10;
+const LEADS=['I','II','III','aVR','aVL','aVF','V1','V2','V3','V4','V5','V6'];
+const K=[[0.38,-0.07,-0.13,0.05,-0.01,0.14,0.06,0.54],[-0.07,0.93,0.06,-0.02,-0.05,0.06,-0.17,0.13],[0.11,-0.23,-0.43,-0.06,-0.14,-0.20,-0.11,0.31]];
+const F=MAN.F;// rows I,II,V1..V6 ; cols Frank X (left), Y (inferior), Z (posterior)
+const sub=(a,b,ka=1,kb=1)=>[ka*a[0]+kb*b[0],ka*a[1]+kb*b[1],ka*a[2]+kb*b[2]];
+const LV={I:F[0],II:F[1],III:sub(F[1],F[0],1,-1),aVR:sub(F[0],F[1],-.5,-.5),aVL:sub(F[0],F[1],1,-.5),aVF:sub(F[1],F[0],1,-.5)};
+['V1','V2','V3','V4','V5','V6'].forEach((k,i)=>LV[k]=F[2+i]);
+const T3=v=>[v[0],-v[1],-v[2]];// Frank -> three.js (x left-of-patient = screen right, y up, z anterior toward viewer)
+const WHERE={I:'Lateral limb lead · left arm vs right arm',II:'Inferior limb lead · left leg vs right arm',III:'Inferior limb lead · left leg vs left arm',aVR:'Augmented · right shoulder; looks into the cavity',aVL:'Augmented · high lateral',aVF:'Augmented · inferior',
+ V1:'Septal · 4th ICS, right sternal border',V2:'Septal · 4th ICS, left sternal border',V3:'Anterior · midway V2 to V4',V4:'Anterior · 5th ICS, midclavicular line',V5:'Lateral · anterior axillary line',V6:'Lateral · midaxillary line'};
+const r2=MAN.r2;$('r2txt').textContent=`${Math.round(Math.min(...r2)*100)}–${Math.round(Math.max(...r2)*100)}%`;
+const byCat={};for(const r of MAN.recs)(byCat[r.c]=byCat[r.c]||[]).push(r);
+for(const k in byCat)byCat[k].sort((a,b)=>Math.max(...b.dx.map(d=>d[2]))-Math.max(...a.dx.map(d=>d[2]))||(b.so-a.so));
+const STG=s=>s?s.replace('Stadium','stage'):'';
+const REALKEYS=Object.keys(CATS).filter(k=>byCat[k]);
+
+/* ---------- state ---------- */
+let mode='real',curCat='inf_acute',curModel='normal',rec=null,recIdx=0,hr=72;
+let L=null,H=null,beatsR=[],meas=null,sel='II',modelP=[];
+
+/* ---------- real data ---------- */
+const cache=new Map();
+async function loadRec(r){
+  $('loading').hidden=false;
+  let pack=cache.get(r.c);
+  if(!pack){const res=await fetch(`data/${r.c}.json`);if(!res.ok)throw new Error('load');pack=await res.json();cache.set(r.c,pack)}
+  const bin=atob(pack[r.id]),u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);
+  const q=new Int16Array(u8.buffer),L8=[];for(let j=0;j<8;j++){const a=new Float32Array(N);for(let i=0;i<N;i++)a[i]=q[j*N+i]/1000;L8.push(a)}
+  setFromL8(L8);beatsR=r.r.slice();rec=r;$('loading').hidden=true;
+}
+function setFromL8(L8){
+  L={I:L8[0],II:L8[1]};['V1','V2','V3','V4','V5','V6'].forEach((k,i)=>L[k]=L8[2+i]);
+  for(const k of ['III','aVR','aVL','aVF'])L[k]=new Float32Array(N);
+  H=new Float32Array(N*3);
+  for(let i=0;i<N;i++){const I=L.I[i],II=L.II[i];L.III[i]=II-I;L.aVR[i]=-(I+II)/2;L.aVL[i]=I-II/2;L.aVF[i]=II-I/2;
+    for(let a=0;a<3;a++){let s=0;for(let j=0;j<8;j++)s+=K[a][j]*L8[j][i];H[i*3+a]=s}}
+}
+
+/* ---------- teaching model (dipole simulator) ---------- */
+const g=(t,s,a,d,s2)=>({k:'g',t,s,s2,a,d:nrm(d)});// d in body coords: x left, y superior, z anterior
+const MP={
+ normal:{name:'Normal sinus rhythm',hr:72,o:{},interp:'Normal sinus rhythm.',
+  vec:'Septal depolarization runs left-to-right and anterior (small r in V1, small q in V6), then the large LV free-wall vector swings left, inferior and posterior.',clin:'Rotate the 3D view to Horizontal and watch the loop sweep from anterior-right to posterior-left.'},
+ lafb:{name:'Left anterior fascicular block',hr:70,o:{mainDir:[.6,.65,-.35],septDir:[-.25,-.75,.55],termDir:[.45,.55,-.4]},interp:'Left axis deviation. Left anterior fascicular block.',
+  vec:'With the anterior fascicle blocked, initial forces point inferior, then late forces sweep superior and leftward.',clin:'Compare with the real LAFB tracings.'},
+ rbbb:{name:'Right bundle branch block',hr:72,o:{extra:[g(.105,.022,.62,[-.6,.05,.78])],j:.14,tDir:[.6,-.6,-.3]},interp:'Right bundle branch block.',
+  vec:'Normal LV activation, then a late slow vector pointing right and anterior as the RV depolarizes through muscle.',clin:'Compare with the real RBBB tracings.'},
+ lbbb:{name:'Left bundle branch block',hr:72,o:{qrs:[g(.025,.018,.7,[.55,-.35,-.5]),g(.07,.025,1.5,[.75,-.2,-.62]),g(.112,.018,.6,[.5,0,-.7])],j:.15,tDir:[-.6,.35,.6],tAmp:.35,st:{a:.12,d:[-.5,.2,.65]}},interp:'Left bundle branch block.',
+  vec:'Septum depolarizes right-to-left, then one broad slow vector heads left and posterior.',clin:'Compare with the real LBBB tracings.'},
+ wpw:{name:'Ventricular pre-excitation (WPW)',hr:72,o:{pr:.11,extra:[g(.02,.018,.55,[.55,-.55,.45])],shift:.03,j:.13,tAmp:.22,tDir:[.35,-.5,-.2]},interp:'Short PR. Ventricular pre-excitation.',
+  vec:'An accessory pathway activates part of the ventricle early and slowly: the delta wave.',clin:'Compare with the real WPW tracings.'},
+ inf:{name:'Inferior injury current',hr:76,o:{septDir:[-.3,.6,.7],st:{a:.3,d:[-.15,-1,.08]},tDir:[.2,-.9,.15],tAmp:.5},interp:'Inferior ST elevation.',
+  vec:'An injury vector pointing inferior raises II, III and aVF, and aVL shows the reciprocal depression automatically.',clin:'This isolates the mechanism; the real acute inferior MIs are messier.'},
+ ant:{name:'Anterior injury current',hr:84,o:{septal:false,ant:false,st:{a:.33,d:[.3,.2,.92]},tDir:[.35,-.3,.85],tAmp:.6},interp:'Anterior ST elevation.',
+  vec:'Injury current pointing anterior and slightly left-superior; septal forces lost.',clin:'Compare with the real acute anterior MIs.'},
+ post:{name:'Posterior injury current',hr:80,o:{antA:1.9,st:{a:.22,d:[0,-.05,-1]},tDir:[.4,-.5,.75],tAmp:.42},interp:'ST depression V1–V3; consider posterior injury.',
+  vec:'The injury vector points straight back, so anterior leads see it as ST depression.',clin:'Compare with the real posterior MIs.'},
+ peri:{name:'Acute pericarditis (model only)',hr:98,o:{st:{a:.18,d:[.45,-.75,.45]},prseg:{a:.07,d:[-.45,.75,-.3]}},interp:'Diffuse ST elevation with PR depression.',
+  vec:'Global epicardial injury points toward the apex; atrial injury adds an opposite PR-segment vector (PR elevation in aVR).',clin:'PTB-XL has no labeled pericarditis, so this pattern exists only in the model.'},
+ lvh:{name:'LV hypertrophy with strain',hr:70,o:{mainA:2.6,mainDir:[.55,-.5,-.65],tDir:[-.55,.35,.45],tAmp:.25,st:{a:.08,d:[-.55,.3,.4]}},interp:'Left ventricular hypertrophy with repolarization abnormality.',
+  vec:'More muscle, bigger posterior-left vector; repolarization reverses over the thick wall.',clin:'Compare with the real LVH tracings.'},
+ pe:{name:'Acute RV strain (PE pattern, model only)',hr:112,o:{septDir:[.3,.85,.35],termDir:[-.85,.15,.25],termA:1.6,tDir:[.55,.25,-.55],tAmp:.25},interp:'Sinus tachycardia. S1Q3T3. T inversion V1–V3.',
+  vec:'Rightward terminal forces (S in I) and repolarization shifted away from right-sided leads.',clin:'PTB-XL has no PE label; model only.'},
+ hyperk:{name:'Hyperkalemia (model only)',hr:70,o:{pr:.2,pAmp:.04,qrsScale:1.5,j:.13,tS:.026,tS2:.026,tAmp:.95,tBack:.08,qtc:.36},interp:'Prolonged PR. Peaked T waves. Consider hyperkalemia.',
+  vec:'Faster phase 3 repolarization (tall narrow T) and slower conduction (wide QRS, flat P).',clin:'PTB-XL does not label hyperkalemia reliably, so this one is model only.'},
+ hypok:{name:'Hypokalemia (model only)',hr:72,o:{tAmp:.1,u:.16,st:{a:.06,d:[-.45,.7,-.3]}},interp:'Flat T waves with prominent U waves.',
+  vec:'Prolonged repolarization lets a late U wave show through as the T flattens.',clin:'Model only.'},
+ lqt:{name:'Long QT',hr:64,o:{qtc:.52,tS:.075},interp:'Prolonged QT interval.',
+  vec:'Normal vector story; repolarization simply takes longer.',clin:'Compare with the real long-QT tracings.'},
+ af:{name:'Atrial fibrillation',hr:105,af:true,o:{noP:true},interp:'Atrial fibrillation with rapid ventricular response.',
+  vec:'Many atrial wavelets cancel into a chaotic low-amplitude baseline; AV conduction is random.',clin:'Compare with the real AFib tracings.'},
+};
+const MKEYS=Object.keys(MP);
+function beatComps(o,rr,hrNow){
+  const c=[],pr=clamp((o.pr??.16)-.0006*(hrNow-70),.1,.32);
+  if(!o.noP){const pa=o.pAmp??.11;
+    c.push(g(-pr+.035,.017,pa,[.25,-.8,.45]),g(-pr+.072,.018,pa,[.7,-.55,-.35]));
+    c.push(g(-pr+.16,.05,-.025,[.5,-.7,.1]))}// atrial repolarization (Ta) wave
+  if(o.qrs)c.push(...o.qrs);else{
+    const k=o.qrsScale??1,sh=o.shift??0;
+    if(o.septal!==false)c.push(g(.012*k+sh,.007*k,.3,o.septDir||[-.55,-.25,.8]));
+    if(o.ant!==false)c.push(g(.027*k+sh,.009*k,.5*(o.antA??1),[.3,-.45,.75]));
+    c.push(g(.042*k+sh,.011*k,1.7*(o.mainA??1),o.mainDir||[.62,-.62,-.38]));
+    c.push(g(.066*k+sh,.01*k,.35*(o.termA??1),o.termDir||[-.35,.65,-.6]));
+  }
+  if(o.extra)c.push(...o.extra);
+  const j=o.j??.09,qt=(o.qtc??.4)*Math.cbrt(rr),tp=qt-(o.tBack??.1);// Fridericia rate adaptation
+  c.push(g(tp,o.tS??.06,o.tAmp??.32,o.tDir||[.55,-.7,.25],o.tS2??.04));
+  if(o.st)c.push({k:'st',t0:j-.005,t1:tp+.02,a:o.st.a,d:nrm(o.st.d),r0:.02,r1:.07});
+  if(o.u)c.push(g(tp+.17,.045,o.u,o.tDir||[.55,-.7,.25]));
+  if(o.prseg)c.push({k:'st',t0:-pr+.11,t1:-.004,a:o.prseg.a,d:nrm(o.prseg.d),r0:.012,r1:.008});
+  return {c,pr,j,qt,tp};
+}
+let seed=1;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};
+function gauss(){let u=0,v=0;while(!u)u=rnd();while(!v)v=rnd();return Math.sqrt(-2*Math.log(u))*Math.cos(6.2832*v)}
+function synthModel(){
+  const p=MP[curModel],o=p.o;seed=(Math.random()*1e9|0)+1;
+  const Hb=new Float32Array(N*3);const beats=[];
+  let t=.35,prev=60/hr;const ph=rnd()*6.28;
+  while(t<DUR+1){
+    const resp=Math.sin(6.2832*t/4+ph);
+    const rr=p.af?60/hr*(.6+rnd()*.8):60/hr*(1+.035*resp+.012*Math.sin(6.2832*t/11)+.006*gauss());
+    beats.push({t,rr:prev});prev=rr;t+=rr}
+  for(const b of beats){
+    const bc=beatComps(o,b.rr,60/b.rr);b.info=bc;
+    for(const c of bc.c){
+      let a0,a1;if(c.k==='g'){a0=c.t-4*c.s;a1=c.t+4*(c.s2||c.s)}else{a0=c.t0-c.r0;a1=c.t1+c.r1*1.5}
+      const i0=Math.max(0,Math.floor((b.t+a0)*FS)),i1=Math.min(N-1,Math.ceil((b.t+a1)*FS));
+      const D=[c.d[0],-c.d[1],-c.d[2]];// body -> Frank
+      for(let i=i0;i<=i1;i++){const d=i/FS-b.t;let v;
+        if(c.k==='g'){const s=d>c.t&&c.s2?c.s2:c.s;v=c.a*Math.exp(-((d-c.t)**2)/(2*s*s))}
+        else v=c.a*sm((d-c.t0+c.r0)/c.r0)*(1-sm((d-c.t1)/c.r1));
+        Hb[i*3]+=v*D[0];Hb[i*3+1]+=v*D[1];Hb[i*3+2]+=v*D[2]}
+    }
+  }
+  if(p.af){const fd=[-.2,.35,-.9];for(let i=0;i<N;i++){const tt=i/FS;
+    const f=.055*(Math.sin(6.2*6.283*tt)+.7*Math.sin(7.9*6.283*tt+1.1)+.5*Math.sin(5.1*6.283*tt+2.2));for(let a=0;a<3;a++)Hb[i*3+a]+=f*fd[a]}}
+  // respiration: frontal-plane axis rotation ±4° and ±4% amplitude
+  for(let i=0;i<N;i++){const r=Math.sin(6.2832*(i/FS)/4+ph),th=r*4*Math.PI/180,sc=1-.04*r,x=Hb[i*3],y=Hb[i*3+1];
+    Hb[i*3]=sc*(x*Math.cos(th)-y*Math.sin(th));Hb[i*3+1]=sc*(x*Math.sin(th)+y*Math.cos(th));Hb[i*3+2]*=sc}
+  // leads = fitted forward matrix · Frank vector, plus electrode-level noise
+  const L8=[];for(let j=0;j<8;j++){const a=new Float32Array(N),f=F[j],w1=rnd()*6.28,w2=rnd()*6.28;let e=0;
+    for(let i=0;i<N;i++){const tt=i/FS;e=.75*e+.25*gauss();
+      a[i]=f[0]*Hb[i*3]+f[1]*Hb[i*3+1]+f[2]*Hb[i*3+2]+.012*Math.sin(6.2832*.25*tt+w1)+.008*Math.sin(6.2832*.07*tt+w2)+.009*e}L8.push(a)}
+  setFromL8(L8);
+  beatsR=beats.map(b=>Math.round(b.t*FS)).filter(x=>x<N);
+  modelP=beats.map(b=>Math.round((b.t-b.info.pr+.055)*FS)).filter(x=>x>=0&&x<N);
+  const b=beats[1],bi=b.info,area=(lead,t0,t1)=>{let s=0;for(let i=Math.floor((b.t+t0)*FS);i<(b.t+t1)*FS;i++)s+=L[lead][i]||0;return s};
+  const axis=(t0,t1)=>Math.round(Math.atan2(area('aVF',t0,t1),area('I',t0,t1))*180/Math.PI);
+  const rrm=p.af?60/hr:b.rr;
+  meas={rate:hr,pr:p.af||o.noP?null:Math.round(bi.pr*1000),qrs:Math.round((bi.j+(o.pr&&o.pr<.12?.02:0))*1000),qt:Math.round(bi.qt*1000),qtc:Math.round(bi.qt/Math.sqrt(rrm)*1000),
+    pax:p.af||o.noP?null:axis(-bi.pr,-bi.pr+.11),rax:axis(-.01,bi.j),tax:axis(bi.tp-.08,bi.tp+.06)};
+}
+
+/* ---------- paper ---------- */
+const LAYOUT=[['I','aVR','V1','V4'],['II','aVL','V2','V5'],['III','aVF','V3','V6']];
+const paper=$('paper'),ov=$('overlay'),pg=paper.getContext('2d'),og=ov.getContext('2d');
+let PW=0,PH=0,mm=1,dpr=1;const X0=8,ROWY=[20,50,80,111],PHmm=128,PWmm=258;
+function paperLayout(){PW=$('paperbox').clientWidth;if(!PW)return;dpr=Math.min(devicePixelRatio||1,2);mm=PW/PWmm;PH=Math.round(PHmm*mm);
+  for(const c of [paper,ov]){c.width=PW*dpr;c.height=PH*dpr;c.style.height=PH+'px'}drawPaper()}
+function drawPaper(){
+  if(!PW||!L)return;const c=pg;c.setTransform(dpr,0,0,dpr,0,0);
+  c.fillStyle='#fffaf7';c.fillRect(0,0,PW,PH);
+  c.lineWidth=.6;c.strokeStyle='#f4cfc8';c.beginPath();
+  for(let x=0;x<=PWmm;x++)if(x%5){c.moveTo(x*mm,0);c.lineTo(x*mm,PH)}
+  for(let y=0;y<=PHmm;y++)if(y%5){c.moveTo(0,y*mm);c.lineTo(PW,y*mm)}c.stroke();
+  c.lineWidth=1;c.strokeStyle='#e8a59b';c.beginPath();
+  for(let x=0;x<=PWmm;x+=5){c.moveTo(x*mm,0);c.lineTo(x*mm,PH)}for(let y=0;y<=PHmm;y+=5){c.moveTo(0,y*mm);c.lineTo(PW,y*mm)}c.stroke();
+  c.strokeStyle='#111';c.lineWidth=Math.max(1,mm*.36);c.lineJoin='round';
+  const cal=y=>{c.beginPath();c.moveTo(1*mm,y);c.lineTo(2*mm,y);c.lineTo(2*mm,y-10*mm);c.lineTo(7*mm,y-10*mm);c.lineTo(7*mm,y);c.lineTo(X0*mm,y);c.stroke()};
+  const seg=(lead,y,t0,t1,x0)=>{const a=L[lead];c.beginPath();const i0=Math.floor(t0*FS),i1=Math.min(N-1,Math.floor(t1*FS));
+    for(let i=i0;i<=i1;i++){const x=(x0+(i/FS-t0)*25)*mm,yy=y-a[i]*10*mm;i===i0?c.moveTo(x,yy):c.lineTo(x,yy)}c.stroke()};
+  c.font=`700 ${Math.max(11,3.6*mm)}px Archivo, Arial, sans-serif`;
+  LAYOUT.forEach((r,ri)=>{const y=ROWY[ri]*mm;cal(y);r.forEach((k,ci)=>{const x0=X0+ci*62.5;seg(k,y,ci*2.5,ci*2.5+2.5,x0);
+    c.fillStyle='#111';c.fillText(k,(x0+1.5)*mm,(ROWY[ri]-9)*mm);
+    if(ci){c.beginPath();c.moveTo(x0*mm,y-4*mm);c.lineTo(x0*mm,y+4*mm);c.stroke()}})});
+  const y=ROWY[3]*mm;cal(y);seg('II',y,0,10,X0);c.fillStyle='#111';c.fillText('II',(X0+1.5)*mm,(ROWY[3]-9)*mm);
+}
+let tau=0;const cal={on:false,pts:[]};
+function drawOverlay(){
+  if(!PW)return;og.setTransform(dpr,0,0,dpr,0,0);og.clearRect(0,0,PW,PH);
+  LAYOUT.forEach((r,ri)=>r.forEach((k,ci)=>{if(k===sel){og.strokeStyle='#866a2e';og.lineWidth=2;og.strokeRect((X0+ci*62.5)*mm+1,(ROWY[ri]-15)*mm,62.5*mm-2,28*mm)}}));
+  const x=(X0+tau*25)*mm;og.fillStyle='rgba(207,174,112,.18)';og.fillRect(x-14,0,14,PH);
+  og.strokeStyle='rgba(134,106,46,.9)';og.lineWidth=2;og.beginPath();og.moveTo(x,0);og.lineTo(x,PH);og.stroke();
+  if(cal.on&&cal.pts.length){
+    og.strokeStyle='#0b5cad';og.fillStyle='#0b5cad';og.lineWidth=1.5;
+    for(const p of cal.pts){og.beginPath();og.moveTo(p[0]*mm,(p[1]-6)*mm);og.lineTo(p[0]*mm,(p[1]+6)*mm);og.stroke();og.beginPath();og.arc(p[0]*mm,p[1]*mm,3,0,6.283);og.fill()}
+    if(cal.pts.length===2){const [a,b]=cal.pts;og.setLineDash([4,3]);og.beginPath();og.moveTo(a[0]*mm,a[1]*mm);og.lineTo(b[0]*mm,a[1]*mm);og.lineTo(b[0]*mm,b[1]*mm);og.stroke();og.setLineDash([])}
+  }
+}
+function evMM(e){const r=ov.getBoundingClientRect();return [(e.clientX-r.left)/mm,(e.clientY-r.top)/mm]}
+ov.addEventListener('click',e=>{
+  const [xm,ym]=evMM(e);
+  if(cal.on){if(cal.pts.length>=2)cal.pts=[];cal.pts.push([xm,ym]);
+    if(cal.pts.length===2){const [a,b]=cal.pts,dt=Math.abs(b[0]-a[0])/25*1000,dv=(a[1]-b[1])/10;
+      $('calRead').className='calread';$('calRead').textContent=`Δt ${Math.round(dt)} ms${dt>200?` · ${Math.round(60000/dt)} bpm if R–R`:''} · ΔV ${dv>=0?'+':''}${dv.toFixed(2)} mV (${Math.abs(dt/40).toFixed(1)} small boxes × ${Math.abs(dv*10).toFixed(1)} mm)`}
+    else{$('calRead').className='calread dim';$('calRead').textContent='Tap the second point.'}
+    return}
+  if(xm<X0)return;if(ym>ROWY[2]+15){setLead('II');return}
+  const ri=clamp(Math.floor((ym-5)/30),0,2),ci=clamp(Math.floor((xm-X0)/62.5),0,3);setLead(LAYOUT[ri][ci])});
+$('calBtn').onclick=()=>{cal.on=!cal.on;cal.pts=[];$('calBtn').setAttribute('aria-pressed',cal.on);
+  $('calRead').className='calread dim';$('calRead').textContent=cal.on?'Tap the first point on the tracing.':'Turn on calipers, then tap two points on the tracing.';
+  ov.style.cursor=cal.on?'crosshair':'pointer'};
+
+/* ---------- header ---------- */
+const AXL={MID:'normal',LAD:'left',ALAD:'abnormal left',RAD:'right',ARAD:'abnormal right',AXL:'left (unspecified)',AXR:'right (unspecified)',SAG:'sagittal'};
+function hidden(){return quiz.on&&!quiz.answered}
+function renderHead(){
+  const el=$('interp');
+  if(mode==='real'){
+    const r=rec;
+    $('meas').innerHTML=`<span>PTB-XL <b>#${r.id}</b></span><span><b>${r.a??'—'}</b> y · <b>${r.s==='M'?'male':'female'}</b></span><span>Vent rate <b>${r.hr??'—'}</b> bpm <span>(median R–R)</span></span><span>QRS axis <b>${r.ax}°</b> <span>(computed)</span></span>`;
+    $('spec').textContent='25 mm/s · 10 mm/mV · 0.67–150 Hz';
+    if(hidden()){el.className='interp hidden';el.textContent='Cardiologist statements hidden until you answer'}
+    else{el.className='interp';el.innerHTML=`${r.dx.filter(d=>d[0]!=='SR'||r.dx.length===1).map(d=>d[1].replace(/^./,c=>c.toUpperCase())).join(' · ')}${r.st?` · infarct ${STG(r.st)}`:''} <span class="src">— cardiologist statements, PTB-XL</span>`}
+  }else{
+    const m=meas,f=v=>v==null?'—':v;
+    $('meas').innerHTML=`<span>Vent rate <b>${m.rate}</b> bpm</span><span>PR <b>${f(m.pr)}</b> ms</span><span>QRS <b>${m.qrs}</b> ms</span><span>QT/QTc <b>${m.qt}/${m.qtc}</b> ms</span><span>P–R–T axes <b>${f(m.pax)} ${m.rax} ${m.tax}</b></span>`;
+    $('spec').textContent='25 mm/s · 10 mm/mV · simulated';
+    el.className='interp';el.innerHTML=`${MP[curModel].interp} <span class="src">— model parameters, exact</span>`;
+  }
+}
+
+/* ---------- three.js ---------- */
+let three=null;
+function initThree(){
+  if(!window.THREE){$('three').insertAdjacentHTML('afterend','<div class="nogl">The 3D view couldn’t load. The 12-lead above still works.</div>');return}
+  const canvas=$('three');let renderer;
+  try{renderer=new THREE.WebGLRenderer({canvas,antialias:true})}catch(e){canvas.insertAdjacentHTML('afterend','<div class="nogl">WebGL isn’t available on this device. The 12-lead above still works.</div>');return}
+  renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.setClearColor(0x0b0b0b);
+  const scene=new THREE.Scene(),cam=new THREE.PerspectiveCamera(34,1,.1,100);
+  const ctr=new THREE.OrbitControls(cam,canvas);ctr.enableDamping=true;ctr.target.set(0,.2,0);ctr.minDistance=4;ctr.maxDistance=20;ctr.enablePan=false;
+  scene.add(new THREE.HemisphereLight(0xfff4dc,0x221a10,.9));const dl=new THREE.DirectionalLight(0xffffff,.6);dl.position.set(3,5,6);scene.add(dl);
+  const TC={x:-.35,y:.3,z:-.45},TA=2.55,TB=1.55,TH=5.2;// torso: heart sits left of midline, just behind the sternum
+  const ringMat=new THREE.LineBasicMaterial({color:0x5c4c2c,transparent:true,opacity:.5});
+  for(let k=0;k<8;k++){const y=TC.y+TH/2-.25-k*.66,pts=[];for(let a=0;a<=64;a++){const th=a/64*Math.PI*2;pts.push(new THREE.Vector3(TC.x+TA*Math.cos(th),y,TC.z+TB*Math.sin(th)))}
+    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),ringMat))}
+  const torso=new THREE.Mesh(new THREE.CylinderGeometry(TA,TA-.05,TH,48,1,true),new THREE.MeshStandardMaterial({color:0xcfae70,transparent:true,opacity:.05,side:THREE.DoubleSide,depthWrite:false}));
+  torso.scale.z=TB/TA;torso.position.set(TC.x,TC.y,TC.z);scene.add(torso);
+  const heartMat=new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,roughness:.55,metalness:0,transparent:true,opacity:.42,depthWrite:false});
+  fetch('data/heart.json').then(r=>r.ok?r.json():Promise.reject()).then(h=>{
+    const dec=b=>{const s2=atob(b),u=new Uint8Array(s2.length);for(let i=0;i<s2.length;i++)u[i]=s2.charCodeAt(i);return u.buffer};
+    const q=new Uint16Array(dec(h.pos)),pos=new Float32Array(q.length);
+    for(let i=0;i<q.length;i++){const a=i%3;pos[i]=h.min[a]+q[i]/65535*(h.max[a]-h.min[a])}
+    const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+    geo.setIndex(new THREE.BufferAttribute(h.idx16?new Uint16Array(dec(h.idx)):new Uint32Array(dec(h.idx)),1));geo.computeVertexNormals();
+    const nv=pos.length/3,u8=b=>new Uint8Array(dec(b)),f=a=>{const o=new Float32Array(a.length);for(let i=0;i<a.length;i++)o[i]=a[i]===255?-1:a[i]/254;return o};
+    HE={n:nv,reg:u8(h.reg),act:{},atr:f(u8(h.atr)),flt:f(u8(h.flt)),pos};for(const k in h.act)HE.act[k]=f(u8(h.act[k]));
+    HE.col=new Float32Array(nv*3);HE.attr=new THREE.BufferAttribute(HE.col,3);geo.setAttribute('color',HE.attr);
+    const mesh=new THREE.Mesh(geo,heartMat);mesh.renderOrder=1;scene.add(mesh);three.heart=mesh;applyHeart();
+  }).catch(()=>{});
+  const label=(txt)=>{const c=document.createElement('canvas');c.width=128;c.height=64;const x=c.getContext('2d');x.font='700 40px Archivo, Arial, sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillStyle='#d9cfb8';x.fillText(txt,64,34);
+    const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthTest:false}));s.scale.set(.6,.3,1);return s};
+  const axes={};
+  for(const k of LEADS){const d=new THREE.Vector3(...T3(nrm(LV[k]))),limb=!k.startsWith('V');
+    let len=3.1;if(!limb){const A=(d.x/TA)**2+(d.z/TB)**2,B=-2*(d.x*TC.x/TA**2+d.z*TC.z/TB**2),C=(TC.x/TA)**2+(TC.z/TB)**2-1;len=A>1e-6?(-B+Math.sqrt(B*B-4*A*C))/(2*A):2.5}
+    const geo=new THREE.BufferGeometry().setFromPoints([d.clone().multiplyScalar(limb?-len*.35:0),d.clone().multiplyScalar(len)]);
+    const mat=new THREE.LineBasicMaterial({color:0x6b6455,transparent:true,opacity:.55});
+    const line=new THREE.Line(geo,mat);scene.add(line);
+    const lab=label(k);lab.position.copy(d.clone().multiplyScalar(len+.32));scene.add(lab);
+    let el=null;if(!limb){el=new THREE.Mesh(new THREE.SphereGeometry(.09,16,12),new THREE.MeshStandardMaterial({color:0xd9cfb8}));el.position.copy(d.clone().multiplyScalar(len));scene.add(el)}
+    axes[k]={mat,lab,el,d,gain:Math.hypot(...LV[k])}}
+  const arrow=new THREE.ArrowHelper(new THREE.Vector3(1,0,0),new THREE.Vector3(),1,0xcfae70,.28,.16);scene.add(arrow);
+  const loopGeo=new THREE.BufferGeometry(),loop=new THREE.Line(loopGeo,new THREE.LineBasicMaterial({vertexColors:true}));scene.add(loop);
+  const projDot=new THREE.Mesh(new THREE.SphereGeometry(.075,16,12),new THREE.MeshBasicMaterial({color:0xe9e1cf}));scene.add(projDot);
+  const dropGeo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]);
+  const drop=new THREE.Line(dropGeo,new THREE.LineDashedMaterial({color:0xe9e1cf,dashSize:.08,gapSize:.06}));scene.add(drop);
+  three={renderer,scene,cam,ctr,axes,arrow,loopGeo,projDot,drop,dropGeo,SC:1.15,loopBeat:-1,heartMat,over:[arrow.line.material,arrow.cone.material,loop.material,projDot.material,drop.material]};
+  three.over.forEach(m=>{m.depthTest=false});[arrow,loop,projDot,drop].forEach(o=>o.renderOrder=5);arrow.line.renderOrder=arrow.cone.renderOrder=5;
+  setView('oblique');new ResizeObserver(sizeThree).observe(canvas);sizeThree();
+}
+let heartMode='ghost';
+function applyHeart(){if(!three||!three.heart)return;const h=three.heart,m=three.heartMat;h.visible=heartMode!=='off';
+  if(heartMode==='solid'){m.opacity=1;m.transparent=false;m.depthWrite=true}else{m.opacity=.42;m.transparent=true;m.depthWrite=false}m.needsUpdate=true;
+  document.querySelectorAll('.hm button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.h===heartMode))}
+document.querySelectorAll('.hm button').forEach(b=>b.onclick=()=>{heartMode=b.dataset.h;applyHeart()});
+function sizeThree(){if(!three)return;const c=$('three'),w=c.clientWidth,h=c.clientHeight;if(!w||!h)return;three.renderer.setSize(w,h,false);three.cam.aspect=w/h;three.cam.updateProjectionMatrix()}
+function setView(v){if(!three)return;three.cam.position.set(...{front:[0,.3,10.2],top:[0,10.8,.01],oblique:[5.3,3.2,8.3]}[v]);three.ctr.update();
+  document.querySelectorAll('.views:not(.hm) button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v))}
+document.querySelectorAll('.views:not(.hm) button').forEach(b=>b.onclick=()=>setView(b.dataset.v));
+const C0=[.44,.42,.38],C1=[.81,.68,.44],C2=[.75,.44,.31];
+function buildLoop(bi){
+  const R=beatsR[bi],prev=bi>0?R-beatsR[bi-1]:(beatsR[1]-beatsR[0])||400,next=bi<beatsR.length-1?beatsR[bi+1]-R:prev;
+  const a=Math.max(0,R-Math.round(.45*prev)),b=Math.min(N,R+Math.round(.65*next));
+  const pos=[],col=[];
+  for(let i=a;i<b;i++){const v=T3([H[i*3],H[i*3+1],H[i*3+2]]);pos.push(v[0]*three.SC,v[1]*three.SC,v[2]*three.SC);
+    const u=(i-a)/(b-a||1),cA=u<.5?C0:C1,cB=u<.5?C1:C2,w=u<.5?u*2:(u-.5)*2;col.push(cA[0]+(cB[0]-cA[0])*w,cA[1]+(cB[1]-cA[1])*w,cA[2]+(cB[2]-cA[2])*w)}
+  three.loopGeo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));three.loopGeo.setAttribute('color',new THREE.Float32BufferAttribute(col,3));three.loopGeo.computeBoundingSphere();
+  three.loopBeat=bi;
+}
+function updateThree(){
+  if(!L)return;const i=clamp(Math.floor(tau*FS),0,N-1),fx=H[i*3],fy=H[i*3+1],fz=H[i*3+2],mag=Math.hypot(fx,fy,fz);
+  const lv=L[sel][i];$('projV').textContent=(lv>=0?'+':'')+lv.toFixed(2);
+  $('vecV').textContent=mag.toFixed(2);$('vecS').textContent=`mV · frontal ${Math.round(Math.atan2(fy,fx)*180/Math.PI)}°`;
+  if(!three)return;
+  let bi=0;for(let k=0;k<beatsR.length;k++)if(beatsR[k]-Math.round(.4*FS)<=i)bi=k;if(bi!==three.loopBeat&&beatsR.length)buildLoop(bi);
+  const v=T3([fx,fy,fz]),{arrow,SC}=three;
+  if(mag>.015){arrow.visible=true;arrow.setDirection(new THREE.Vector3(...v).normalize());arrow.setLength(Math.max(mag*SC,.3),Math.min(.28,mag*SC*.4+.08),.14)}else arrow.visible=false;
+  const u=three.axes[sel].d,dot=v[0]*u.x+v[1]*u.y+v[2]*u.z,p=u.clone().multiplyScalar(dot*SC);
+  three.projDot.position.copy(p);three.dropGeo.setFromPoints([new THREE.Vector3(v[0]*SC,v[1]*SC,v[2]*SC),p]);three.drop.computeLineDistances();
+  colorHeart(i);three.ctr.update();three.renderer.render(three.scene,three.cam);
+}
+function styleAxes(){if(!three)return;for(const k of LEADS){const a=three.axes[k],on=k===sel;a.mat.color.set(on?0xcfae70:0x6b6455);a.mat.opacity=on?1:.5;
+  a.lab.material.opacity=on?1:.6;a.lab.scale.set(on?.8:.6,on?.4:.3,1);if(a.el)a.el.material.color.set(on?0xcfae70:0xd9cfb8)}}
+
+
+/* ---------- depolarization animation ---------- */
+let HE=null,BI=[],AT={mode:'p',p:[],ok:true};
+const COL={ves:[.5,.46,.47],rest:[.5,.2,.17],dep:[1,.76,.3],front:[1,.98,.86],atrRest:[.56,.25,.2]};
+const CAT2T={lbbb:'lbbb',rbbb:'rbbb',irbbb:'rbbb',bifasc:'rbbb',lafb:'lafb',lpfb:'lpfb',wpw:'wpw',pace:'pace'},MOD2T={lbbb:'lbbb',rbbb:'rbbb',lafb:'lafb',wpw:'wpw'};
+function prepBeats(baseT,atrMode,pList,pOK){
+  BI=[];const sv=new Float32Array(N),mg=new Float32Array(N);
+  for(let i=0;i<N;i++){mg[i]=Math.hypot(H[i*3],H[i*3+1],H[i*3+2]);if(i)sv[i]=Math.hypot(H[i*3]-H[i*3-3],H[i*3+1]-H[i*3-2],H[i*3+2]-H[i*3-1])}
+  const med=a=>{const b=Array.from(a).sort((x,y)=>x-y);return b[b.length>>1]||0};
+  beatsR.forEach((R,k)=>{
+    const prevR=k?beatsR[k-1]:R-400,nextR=k<beatsR.length-1?beatsR[k+1]:R+400;
+    const a=Math.max(0,R-50,Math.round((prevR+R)/2)),b=Math.min(N-1,R+80);
+    const seg=sv.subarray(a,b+1),fl=med(seg);let c=0;const cum=new Float32Array(seg.length);
+    for(let j=0;j<seg.length;j++){c+=Math.max(0,seg[j]-fl*1.2);cum[j]=c}for(let j=0;j<cum.length;j++)cum[j]/=c||1;
+    let on=a,off=b;for(let j=0;j<cum.length;j++){if(cum[j]>.03){on=a+j;break}}for(let j=0;j<cum.length;j++){if(cum[j]>.97){off=a+j;break}}
+    const ta=off+15,tb=Math.max(ta+20,Math.min(nextR-60,R+Math.round(.42*(nextR-R))+40,N-1));
+    const tseg=mg.subarray(ta,tb+1);let mn=Infinity;for(const v of tseg)mn=Math.min(mn,v);let tc=0;const tcum=new Float32Array(tseg.length);
+    for(let j=0;j<tseg.length;j++){tc+=tseg[j]-mn;tcum[j]=tc}for(let j=0;j<tcum.length;j++)tcum[j]/=tc||1;
+    BI.push({R,a,cum,on,off,ta,tb,tcum,t:baseT,w:off-on});
+  });
+  const ws=BI.map(x=>x.w).sort((x,y)=>x-y),mw=ws[ws.length>>1]||40;
+  for(const x of BI)if(x.w>1.35*mw&&x.w>55)x.t='rvot';// wide ectopic beat
+  AT={mode:atrMode,p:pList||[],ok:pOK!==false};
+  if(typeof runHemo==='function')runHemo();
+}
+function colorHeart(i){
+  if(!HE||!three||!three.heart||!three.heart.visible)return;
+  let b=null;for(const x of BI){if(x.a<=i)b=x;else break}
+  let vs=0,pv=0,pr=0;// 0 rest, 1 depolarizing, 2 depolarized/recovering
+  if(b){if(i<b.on)vs=0;else if(i<=b.off){vs=1;pv=b.cum[i-b.a]}else if(i<=b.tb){vs=2;pr=i<b.ta?0:b.tcum[i-b.ta]}else vs=0}
+  const act=HE.act[b?b.t:'normal']||HE.act.normal,A=HE.atr,col=HE.col,reg=HE.reg,n=HE.n;
+  // atrial state
+  let am=AT.mode,pa=-1,prA=-1;const tt=i/FS;
+  if(am==='p'&&AT.ok){let q=null;for(const x of AT.p){if(x-25<=i)q=x;else break}
+    if(q!==null&&i<q+200){pa=(i-(q-25))/50;prA=(i-(q+75))/110}}
+  else if(am==='svt'&&b&&i>=b.on&&i<b.on+160){pa=(i-b.on)/45;prA=(i-b.on-70)/90}
+  const pos=HE.pos,flt=HE.flt;
+  for(let v=0;v<n;v++){let c;const r=reg[v];
+    if(r===0)c=COL.ves;
+    else if(r===2){const a=act[v];
+      if(a<0||vs===0)c=COL.rest;
+      else if(vs===1){c=a<=pv?(pv-a<.07?COL.front:COL.dep):COL.rest}
+      else{c=pr>=1-a?COL.rest:COL.dep}}
+    else{const a=A[v];c=COL.atrRest;
+      if(am==='af'){const x=pos[v*3],y=pos[v*3+1],z=pos[v*3+2];
+        const f=Math.sin(9*x+5*y+11*tt)+Math.sin(7*y-8*z-13*tt)+Math.sin(10*z+6*x+9*tt);if(f>1.5)c=f>2.2?COL.front:COL.dep}
+      else if(am==='flutter'){const ph=((flt[v]-tt*5)%1+1)%1;if(ph<.32)c=ph<.05?COL.front:COL.dep}
+      else if(pa>=0&&a>=0&&a<=pa&&!(prA>=a)){c=pa-a<.08&&pa<1.08?COL.front:COL.dep}}
+    col[v*3]=c[0];col[v*3+1]=c[1];col[v*3+2]=c[2]}
+  HE.attr.needsUpdate=true;
+}
+
+/* ---------- lead inspector ---------- */
+const lg=$('leadgrid');
+for(const k of LEADS){const b=document.createElement('button');b.className='lb';b.textContent=k;b.dataset.k=k;b.onclick=()=>setLead(k);lg.appendChild(b)}
+function setLead(k){sel=k;$('leadName').textContent=k;$('leadWhere').textContent=WHERE[k];lg.querySelectorAll('.lb').forEach(b=>b.setAttribute('aria-pressed',b.dataset.k===k));styleAxes()}
+
+/* ---------- pickers ---------- */
+function renderPicker(){
+  const ge=$('groups');ge.innerHTML='';
+  if(mode==='real'){
+    for(const gname of GROUPS_REAL){const row=document.createElement('div');row.className='grp';row.innerHTML=`<div class="glab">${gname}</div><div class="chips"></div>`;
+      for(const k of REALKEYS.filter(k=>CATS[k].g===gname)){const b=document.createElement('button');b.className='chip';b.dataset.k=k;b.innerHTML=`${CATS[k].s}<sup>${byCat[k].length}</sup>`;
+        b.setAttribute('aria-pressed',k===curCat);b.onclick=()=>pickReal(k,0);row.querySelector('.chips').appendChild(b)}
+      ge.appendChild(row)}
+  }else{
+    const row=document.createElement('div');row.className='grp';row.innerHTML=`<div class="glab">Model patterns</div><div class="chips"></div>`;
+    for(const k of MKEYS){const b=document.createElement('button');b.className='chip';b.dataset.k=k;b.textContent=MP[k].name.replace(' (model only)','').replace('Ventricular pre-excitation (WPW)','WPW');
+      b.setAttribute('aria-pressed',k===curModel);b.onclick=()=>pickModel(k);row.querySelector('.chips').appendChild(b)}
+    ge.appendChild(row);
+  }
+}
+function markChips(){const k=hidden()?null:(mode==='real'?curCat:curModel);document.querySelectorAll('.chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.k===k))}
+async function pickReal(k,idx){
+  curCat=k;recIdx=idx;markChips();
+  try{await loadRec(byCat[k][idx%byCat[k].length])}catch(e){$('loading').textContent='Couldn’t load this tracing. Try another patient.';return}
+  prepBeats(CAT2T[k]||'normal',rec.am||'p',rec.p,rec.am!=='p'||rec.p.length>0);setStageLab();
+  if(three)three.loopBeat=-1;drawPaper();renderHead();if(!quiz.on)renderCard();
+}
+function pickModel(k){curModel=k;hr=MP[k].hr;$('hr').value=hr;$('hrOut').textContent=hr;markChips();regenModel();renderCard()}
+function regenModel(){synthModel();prepBeats(MOD2T[curModel]||'normal',MP[curModel].af?'af':'p',MP[curModel].af?[]:modelP,true);setStageLab();if(three)three.loopBeat=-1;drawPaper();renderHead()}
+$('hr').oninput=e=>{hr=+e.target.value;$('hrOut').textContent=hr;regenModel()};
+$('another').onclick=()=>{if(mode==='real'){if(quiz.on){if(quiz.answered)nextCase()}else pickReal(curCat,recIdx+1)}else regenModel()};
+let speed=.25;const setSpeed=(id,v)=>{speed=v;['sp1','sp4','sp0'].forEach(x=>$(x).setAttribute('aria-pressed',x===id))};const spd=(id,v)=>{$(id).onclick=()=>setSpeed(id,v)};spd('sp1',1);spd('sp4',.25);spd('sp0',0);
+/* ---------- one-beat scrubber ---------- */
+let scrubbing=false;
+function beatAt(i){for(let j=0;j<BI.length;j++){if(i<=beatSpan(j)[1])return j}return Math.max(0,BI.length-1)}
+let scrubK=0;
+function beatSpan(k){const b=BI[k];if(!b)return [0,N-1];
+  let st=b.on-110;if(AT.mode==='p'&&AT.ok){const q=AT.p.filter(x=>x<b.on&&x>b.on-180).pop();if(q!==undefined)st=q-45}
+  const prevEnd=k?BI[k-1].tb:0;return [Math.max(0,prevEnd,st),Math.min(N-1,b.tb+25)]}
+function scrubTo(k,frac){const [a,b]=beatSpan(k);tau=(a+frac*(b-a))/FS}
+$('scrub').addEventListener('input',e=>{if(!scrubbing){scrubK=beatAt(Math.floor(tau*FS));scrubbing=true}setSpeed('sp0',0);scrubTo(scrubK,e.target.value/1000)});
+$('scrub').addEventListener('change',()=>{scrubbing=false});
+const stepBeat=d=>{if(!BI.length)return;setSpeed('sp0',0);const k=clamp(beatAt(Math.floor(tau*FS))+d,0,BI.length-1);scrubTo(k,0);$('scrub').value=0};
+$('bPrev').onclick=()=>stepBeat(-1);$('bNext').onclick=()=>stepBeat(1);
+function phaseText(i){
+  const k=scrubbing?scrubK:beatAt(i),b=BI[k];if(!b)return '—';
+  if(AT.mode==='p'&&AT.ok&&i<b.on){const q=AT.p.filter(x=>x<=i+25).pop();if(q!==undefined&&i<q+25&&i>=q-25)return 'P wave · atria depolarizing from the SA node';if(q!==undefined&&i>=q+25&&q>b.on-180)return 'PR segment · impulse delayed in the AV node'}
+  if(i<b.on)return AT.mode==='af'?'Fibrillating atria · no organized P wave':AT.mode==='flutter'?'Flutter wave circling the right atrium':'Electrical diastole';
+  if(i<=b.off){const pv=b.cum[i-b.a];return `QRS · ${Math.round(pv*100)}% of ventricular muscle activated${b.t==='rvot'?' (ectopic beat)':''}`}
+  if(i<b.ta)return 'ST segment · ventricles fully depolarized';
+  if(i<=b.tb){const pr=b.tcum[i-b.ta];return `T wave · ventricles repolarizing (${Math.round(pr*100)}%)`}
+  return 'Electrical diastole';
+}
+function syncScrub(){const i=Math.floor(tau*FS);$('phase').textContent=phaseText(i);if(scrubbing||!BI.length)return;const [a,b]=beatSpan(beatAt(i));$('scrub').value=Math.round(clamp((i-a)/(b-a||1),0,1)*1000)}
+
+function setStageLab(){const note=mode==='real'&&rec&&rec.am==='p'&&!rec.p.length?' · atria not animated (P waves not reliably detected)':mode==='real'&&rec&&rec.pgen?' · P timing estimated':'';
+  $('stageLab').innerHTML=(mode==='real'?'Heart vector · this patient<span>Reconstructed from the 12-lead (Kors matrix)':'Heart vector · model<span>Leads generated from this vector (fitted forward matrix)')+note+'</span>'}
+/* ---------- mode tabs ---------- */
+function setMode(m){
+  if(m===mode)return;mode=m;
+  $('tabReal').setAttribute('aria-selected',m==='real');$('tabModel').setAttribute('aria-selected',m==='model');
+  $('hrRow').hidden=m==='real';$('quiz').hidden=m!=='real';$('another').textContent=m==='real'?'Another patient':'New tracing';
+  setStageLab();
+  $('mastP').textContent=m==='real'?`${MAN.recs.length} real 12-leads read by cardiologists, each shown with its own 3D heart vector reconstructed from the tracing.`:'A single moving dipole drives all twelve leads. Change the vector, watch every lead respond.';
+  if(quiz.on)toggleQuiz();
+  renderPicker();if(m==='real')pickReal(curCat,recIdx);else pickModel(curModel);
+}
+$('tabReal').onclick=()=>setMode('real');$('tabModel').onclick=()=>setMode('model');
+
+/* ---------- card ---------- */
+function dxHTML(r){return `<div><div class="dxh">This patient · cardiologist statements</div><ul class="dxl">${r.dx.map(d=>`<li><code>${d[0]}</code>${d[1]}${d[2]?` · ${d[2]}%`:''}</li>`).join('')}${r.st?`<li><code>STAGE</code>infarct ${STG(r.st)} (I acute → III old)</li>`:''}${r.so?'<li><code>2ND</code>second cardiologist review</li>':''}</ul></div>`}
+function catBody(c){return `<ul class="finds">${c.f.map(x=>`<li><b>${x[0]}</b><span>${x[1]}</span></li>`).join('')}</ul>
+  <div class="two"><div><h3>What to look for</h3><p>${c.look}</p></div><div><h3>Clinical</h3><p>${c.clin}</p></div></div>`}
+function renderCard(){
+  if(mode==='real'){const c=CATS[curCat];
+    $('card').innerHTML=`<div><div class="eyebrow">${c.g} · patient ${recIdx%byCat[curCat].length+1} of ${byCat[curCat].length}</div><h2>${c.n}</h2></div>${catBody(c)}${dxHTML(rec)}`}
+  else{const p=MP[curModel];
+    $('card').innerHTML=`<div><div class="eyebrow">Teaching model</div><h2>${p.name}</h2></div><div class="two"><div><h3>The vector story</h3><p>${p.vec}</p></div><div><h3>Note</h3><p>${p.clin}</p></div></div>
+      <p style="margin:0;color:var(--muted);font-size:14px">Model physiology: breathing-linked rate variation and axis sway, atrial repolarization wave, rate-adapted QT (Fridericia), electrode noise and baseline wander. Leads are generated from the 3D vector with the forward matrix fitted to the real records.</p>`}
+}
+
+/* ---------- quiz (real patients) ---------- */
+const quiz={on:false,answered:true,score:0,n:0,opts:[]};
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+async function nextCase(){
+  let k;do{k=REALKEYS[Math.floor(Math.random()*REALKEYS.length)]}while(k===curCat&&REALKEYS.length>1);
+  const same=shuffle(REALKEYS.filter(x=>x!==k&&CATS[x].g===CATS[k].g)).slice(0,2),rest=shuffle(REALKEYS.filter(x=>x!==k&&!same.includes(x)));
+  quiz.opts=shuffle([k,...same,...rest].slice(0,4));quiz.answered=false;
+  await pickReal(k,Math.floor(Math.random()*byCat[k].length));renderQuiz();
+}
+function renderQuiz(pick){
+  const c=CATS[curCat];let h=`<div class="qhead"><div><div class="eyebrow">Quiz · real patient ${quiz.n+(quiz.answered?0:1)}</div><h2>Read this 12-lead</h2>
+    <p>Rate, rhythm, axis, intervals, hypertrophy, ischemia. Calipers and the 3D vector are fair game.</p></div><div class="score">Score <b>${quiz.score}</b> / ${quiz.n}</div></div>
+    <div class="opts">${quiz.opts.map(k=>{let cl='';if(quiz.answered){if(k===curCat)cl='right';else if(k===pick)cl='wrong'}return `<button class="opt ${cl}" data-k="${k}" ${quiz.answered?'disabled':''}>${CATS[k].n}</button>`}).join('')}</div>`;
+  if(quiz.answered)h+=`<p class="verdict ${pick===curCat?'ok':'no'}">${pick===curCat?'Correct.':'Not quite. This is '+c.n.charAt(0).toLowerCase()+c.n.slice(1)+'.'}</p>${dxHTML(rec)}${catBody(c)}<button class="next" id="nextBtn">Next patient</button>`;
+  $('card').innerHTML=h;
+  $('card').querySelectorAll('.opt').forEach(b=>b.onclick=()=>{quiz.answered=true;quiz.n++;if(b.dataset.k===curCat)quiz.score++;renderHead();markChips();renderQuiz(b.dataset.k)});
+  const nb=$('nextBtn');if(nb)nb.onclick=nextCase;
+}
+function toggleQuiz(){quiz.on=!quiz.on;$('quiz').setAttribute('aria-pressed',quiz.on);$('quiz').textContent=quiz.on?'Exit quiz':'Quiz me';$('picker').disabled=quiz.on;
+  if(quiz.on){quiz.score=0;quiz.n=0;nextCase()}else{quiz.answered=true;markChips();renderHead();renderCard()}}
+$('quiz').onclick=toggleQuiz;
+
+/* ---------- hemodynamics: time-varying elastance circulation driven by this ECG's timing ---------- */
+const HBASE={Ees:2.8,V0:15,A:1.1,B:.018,Vd:12,Erv:.6,V0rv:15,Arv:.5,Brv:.02,Ela:.3,V0la:8,Ala:.45,Bla:.05,Rmv:.004,Rav:.004,Zc:.035,Cart:1.5,Rsys:1.0,
+  Csv:50,Rtv:.004,Rpv:.004,Cpa:4,Rpul:.07,Cpvn:9,Rpvn:.008,Vtot:780,Rmr:1e9,Rar:1e9};
+const HCONDS={normal:['Normal heart',{}],preload:['↑ Preload (volume)',{Vtot:930}],afterload:['↑ Afterload (SVR)',{Rsys:1.6}],contract:['↑ Contractility',{Ees:4.4}],
+  syshf:['Systolic HF (HFrEF)',{Ees:.95,V0:55,Vtot:1010,A:.7,B:.014}],diashf:['Diastolic dysfunction (HFpEF)',{A:2.4,B:.026,Vtot:880}],
+  as:['Aortic stenosis',{Rav:.16}],ar:['Aortic regurgitation',{Rar:.6,A:.7,B:.013,Vtot:860}],mr:['Mitral regurgitation',{Rmr:.35,Vtot:860}],ms:['Mitral stenosis',{Rmv:.1,Vtot:830}]};
+let hcond='normal',HD=null,HN=null,hview='three';
+const hact=(x,tc,tr)=>x<0||x>tc+tr?0:x<tc?.5*(1-Math.cos(Math.PI*x/tc)):.5*(1+Math.cos(Math.PI*(x-tc)/tr));
+function hemoInputs(){
+  const vb=BI.map(b=>{const d=Math.max(.24,(b.tb-b.on)/FS);return [b.on/FS+.04,.6*d,.4*d]});
+  const af=AT.mode==='af'||AT.mode==='flutter';
+  let pa=[];if(!af){if(AT.mode==='svt')pa=BI.map(b=>b.on/FS);else if(AT.ok&&AT.p.length)pa=AT.p.map(p=>p/FS+.01)}
+  if(!vb.length)return null;
+  const rr=vb.length>1?(vb[vb.length-1][0]-vb[0][0])/(vb.length-1):.8,warm=[],wp=[];
+  for(let k=1;k<=8;k++){const s=-k*rr;vb.slice(0,1).forEach(b=>warm.push([b[0]+s,b[1],b[2]]));if(pa.length&&pa[0]<vb[0][0])wp.push(pa[0]+s)}
+  return {vb:[...warm.reverse(),...vb],pa:[...wp.reverse(),...pa],af,t0:-8*rr-.2};
+}
+function simHemo(prm,inp){
+  const p=Object.assign({},HBASE,prm),dt=.0005,sub=Math.round(1/FS/dt);
+  let Vlv=120,Vla=50,Vrv=110,Vart=90*p.Cart,Vpa=15*p.Cpa,Vpvn=9*p.Cpvn,Vsv=p.Vtot-Vlv-Vla-Vrv-Vart-Vpa-Vpvn;
+  const out={Plv:new Float32Array(N),Pao:new Float32Array(N),Pla:new Float32Array(N),Vlv:new Float32Array(N),Qmv:new Float32Array(N),Qav:new Float32Array(N),Ppa:new Float32Array(N),p};
+  const {vb,pa,af,t0}=inp;let vi=0,ai=0;const steps=Math.round((DUR-t0)/dt);
+  for(let k=0;k<steps;k++){
+    const t=t0+k*dt;
+    while(vi<vb.length-1&&t>vb[vi][0]+vb[vi][1]+vb[vi][2]+.01)vi++;
+    let e=0;for(let j=Math.max(0,vi-1);j<Math.min(vb.length,vi+2);j++)e=Math.max(e,hact(t-vb[j][0],vb[j][1],vb[j][2]));
+    let ea=0;if(!af){while(ai<pa.length-1&&t>pa[ai]+.18)ai++;for(let j=Math.max(0,ai-1);j<Math.min(pa.length,ai+2);j++)ea=Math.max(ea,hact(t-pa[j],.09,.08))}
+    const Plv=e*p.Ees*(Vlv-p.V0)+(1-e)*p.A*(Math.exp(p.B*(Vlv-p.Vd))-1),Prv=e*p.Erv*(Vrv-p.V0rv)+(1-e)*p.Arv*(Math.exp(p.Brv*(Vrv-p.V0rv))-1);
+    const Pla=ea*p.Ela*(Vla-p.V0la)+(1-ea)*p.Ala*(Math.exp(p.Bla*(Vla-p.V0la))-1);
+    const Part=Vart/p.Cart,Psv=Vsv/p.Csv,Ppa=Vpa/p.Cpa,Ppvn=Vpvn/p.Cpvn;
+    let d=Pla-Plv;const Qmv=d>0?d/p.Rmv:d/p.Rmr;d=Plv-Part;const Qav=d>0?d/(p.Rav+p.Zc):d/p.Rar;
+    const Qtv=Math.max(0,(Psv-Prv)/p.Rtv),Qpv=Math.max(0,(Prv-Ppa)/p.Rpv),Qs=(Part-Psv)/p.Rsys,Qpul=(Ppa-Ppvn)/p.Rpul,Qpvn=(Ppvn-Pla)/p.Rpvn;
+    Vlv+=dt*(Qmv-Qav);Vla+=dt*(Qpvn-Qmv);Vart+=dt*(Qav-Qs);Vsv+=dt*(Qs-Qtv);Vrv+=dt*(Qtv-Qpv);Vpa+=dt*(Qpv-Qpul);Vpvn+=dt*(Qpul-Qpvn);
+    if(t>=0&&k%sub===0){const i=Math.round(t*FS);if(i<N){out.Plv[i]=Plv;out.Pao[i]=Qav>0?Part+p.Zc*Qav:Part;out.Pla[i]=Pla;out.Vlv[i]=Vlv;out.Qmv[i]=Qmv;out.Qav[i]=Qav;out.Ppa[i]=Ppa}}
+  }
+  return out;
+}
+function hemoEvents(D){// valve events per beat
+  const ev=[];
+  BI.forEach((b,k)=>{const end=k<BI.length-1?BI[k+1].on:N-1;const f=(arr,s,e,test)=>{for(let i=Math.max(1,s);i<e;i++)if(test(arr[i-1],arr[i]))return i;return -1};
+    const mc=f(D.Qmv,b.on-20,b.on+150,(a,c)=>a>0.5&&c<=0.5),ao=f(D.Qav,b.on,b.on+200,(a,c)=>a<=0.5&&c>0.5),
+      ac=ao>0?f(D.Qav,ao+5,end,(a,c)=>a>0.5&&c<=0.5):-1,mo=ac>0?f(D.Qmv,ac,end,(a,c)=>a<=0.5&&c>0.5):-1;
+    ev.push({mc,ao,ac,mo,on:b.on,end})});
+  return ev;
+}
+function runHemo(){
+  const inp=hemoInputs();if(!inp){HD=null;return}
+  HD=simHemo(HCONDS[hcond][1],inp);HD.ev=hemoEvents(HD);
+  HN=hcond==='normal'?null:simHemo({},inp);
+}
+function beatMetrics(D,k){const e=D.ev[k];if(!e||e.mc<0)return null;
+  const s=Math.max(0,e.mc-10),en=e.end;let edv=0,esv=1e9,pk=0,sw=0;
+  for(let i=s;i<en;i++){edv=Math.max(edv,D.Vlv[i]);esv=Math.min(esv,D.Vlv[i]);pk=Math.max(pk,D.Plv[i]);if(i>s)sw+=-(D.Vlv[i]-D.Vlv[i-1])*(D.Plv[i]+D.Plv[i-1])/2}
+  let fwd=0;for(let i=s;i<en;i++)fwd+=D.Qav[i]/FS;
+  const rr=(BI[k+1]?BI[k+1].on-BI[k].on:(BI[k].on-(BI[k-1]?BI[k-1].on:BI[k].on-400)))/FS;
+  let aoMax=0,aoMin=1e9;for(let i=s;i<en;i++){aoMax=Math.max(aoMax,D.Pao[i]);aoMin=Math.min(aoMin,D.Pao[i])}
+  let lap=0;for(let i=s;i<en;i++)lap+=D.Pla[i];lap/=Math.max(1,en-s);
+  return {edv,esv,sv:edv-esv,ef:100*(edv-esv)/edv,edp:D.Plv[e.mc>0?e.mc:s],pk,sw,fwd,co:fwd*60/rr/1000,aoMax,aoMin,lap,hr:60/rr}}
+
+/* ---------- Wiggers and PV-loop drawing ---------- */
+const wc=$('wig'),wx=wc.getContext('2d'),pc=$('pvl'),px=pc.getContext('2d');
+let W2=0,H2=0,d2=1;
+function sizeHemo(){const c=hview==='wig'?wc:pc;const w=c.parentElement.clientWidth;if(!w)return;d2=Math.min(devicePixelRatio||1,2);W2=w;H2=w<520?480:520;
+  for(const x of [wc,pc]){x.width=W2*d2;x.height=H2*d2;x.style.height=H2+'px'}}
+const HC={ao:'#cfae70',lv:'#f6f1e4',la:'#c0714f',vol:'#8fb8c9',ecg:'#9fd6a6',grid:'rgba(207,174,112,.12)',txt:'#bdb4a0',dim:'rgba(233,225,207,.35)'};
+function hemoWindow(i){const k=beatAt(i),b=BI[k];if(!b)return null;const rr=BI[k+1]?BI[k+1].on-b.on:(k?b.on-BI[k-1].on:400);
+  return {k,a:Math.max(0,b.on-Math.round(.22*rr)),b:Math.min(N-1,b.on+Math.round(1.0*rr))}}
+function phonoAt(D,i){// heart sounds and murmurs as envelopes from valve events and flows
+  const p=D.p;let s=0;const e=D.ev;
+  for(const v of e){for(const [t,amp] of [[v.mc,1],[v.ac,.8]])if(t>0&&Math.abs(i-t)<18)s=Math.max(s,amp*Math.exp(-(((i-t)/7)**2)))}
+  if(p.Rav>.02&&D.Qav[i]>0)s=Math.max(s,Math.min(.75,D.Qav[i]/700));
+  if(p.Rar<1e8&&D.Qav[i]<0)s=Math.max(s,Math.min(.6,-D.Qav[i]/60));
+  if(p.Rmr<1e8&&D.Qmv[i]<0)s=Math.max(s,Math.min(.55,-D.Qmv[i]/250));
+  if(p.Rmv>.02&&D.Qmv[i]>0)s=Math.max(s,Math.min(.6,D.Qmv[i]/350));
+  if(hcond==='syshf'||hcond==='mr'){for(const v of e)if(v.mo>0&&Math.abs(i-(v.mo+70))<14)s=Math.max(s,.45*Math.exp(-(((i-v.mo-70)/6)**2)))}
+  if(hcond==='diashf'&&AT.mode==='p'){for(const v of e)if(Math.abs(i-(v.on-30))<12)s=Math.max(s,.4*Math.exp(-(((i-v.on+30)/5)**2)))}
+  return s}
+function drawWiggers(i){
+  if(!HD||!W2)return;const c=wx;c.setTransform(d2,0,0,d2,0,0);c.fillStyle='#0b0b0b';c.fillRect(0,0,W2,H2);
+  const w=hemoWindow(i);if(!w)return;const L0=54,R0=W2-16,xs=j=>L0+(j-w.a)/(w.b-w.a)*(R0-L0);
+  const top=118,pH=(H2-top-30)*.46,vT=top+pH+14,vH=(H2-top-30)*.2,eT=vT+vH+10,eH=(H2-top-30)*.14,sT=eT+eH+6,sH=(H2-top-30)*.1,bT=sT+sH+6;
+  let pmax=140;for(let j=w.a;j<w.b;j++)pmax=Math.max(pmax,HD.Plv[j]*1.08,HD.Pao[j]*1.08);pmax=Math.ceil(pmax/20)*20;
+  let vmin=1e9,vmax=0;for(let j=w.a;j<w.b;j++){vmin=Math.min(vmin,HD.Vlv[j]);vmax=Math.max(vmax,HD.Vlv[j])}vmin=Math.floor((vmin-10)/20)*20;vmax=Math.ceil((vmax+10)/20)*20;
+  // phase bands
+  const ev=HD.ev[w.k];c.font='600 11px Archivo, Arial, sans-serif';c.textAlign='center';
+  if(ev&&ev.mc>0){const bands=[[ev.mc,ev.ao,'Isovol. contraction','rgba(207,174,112,.10)'],[ev.ao,ev.ac,'Ejection','rgba(207,174,112,.18)'],[ev.ac,ev.mo,'Isovol. relaxation','rgba(207,174,112,.10)'],[ev.mo,Math.min(w.b,ev.end),'Filling','rgba(143,184,201,.10)']];
+    let yl=0;for(const [a,b,t,col] of bands){if(a<0||b<0||b<=a)continue;c.fillStyle=col;c.fillRect(xs(a),top-8,xs(b)-xs(a),bT+14-top+8);
+      const xm=(xs(a)+xs(b))/2,wd=xs(b)-xs(a);c.fillStyle=HC.txt;const tt=W2<560?({'Isovol. contraction':'IVC','Isovol. relaxation':'IVR'}[t]||t):t;if(wd>c.measureText(tt).width+4)c.fillText(tt,xm,top-14);else{c.fillText(tt.replace('Isovol. ','IV '),xm,top-28+yl*12);yl^=1}}}
+  // pressure grid
+  c.strokeStyle=HC.grid;c.lineWidth=1;c.textAlign='right';c.fillStyle=HC.txt;c.font='11px "IBM Plex Mono", monospace';
+  for(let v=0;v<=pmax;v+=pmax>200?50:20){const y=top+pH-v/pmax*pH;c.beginPath();c.moveTo(L0,y);c.lineTo(R0,y);c.stroke();c.fillText(v,L0-6,y+4)}
+  c.save();c.translate(14,top+pH/2);c.rotate(-Math.PI/2);c.textAlign='center';c.fillText('mmHg',0,0);c.restore();
+  const line=(arr,col,y0,h,lo,hi,lw=1.8,dash)=>{c.strokeStyle=col;c.lineWidth=lw;c.setLineDash(dash||[]);c.beginPath();for(let j=w.a;j<=w.b;j++){const y=y0+h-(arr[j]-lo)/(hi-lo)*h;j===w.a?c.moveTo(xs(j),y):c.lineTo(xs(j),y)}c.stroke();c.setLineDash([])};
+  if(HN){line(HN.Pao,HC.dim,top,pH,0,pmax,1,[4,4]);line(HN.Plv,HC.dim,top,pH,0,pmax,1,[4,4])}
+  line(HD.Pla,HC.la,top,pH,0,pmax);line(HD.Pao,HC.ao,top,pH,0,pmax,2.2);line(HD.Plv,HC.lv,top,pH,0,pmax,2);
+  c.textAlign='left';c.font='700 12px Archivo, Arial, sans-serif';
+  const lab=(t,col,arr)=>{const j=Math.round(w.a+.62*(w.b-w.a));c.fillStyle=col;c.fillText(t,xs(j)+4,top+pH-arr[j]/pmax*pH-6)};
+  lab('Aorta',HC.ao,HD.Pao);lab('LV',HC.lv,HD.Plv);c.fillStyle=HC.la;c.fillText('LA',xs(w.b)-22,top+pH-HD.Pla[w.b]/pmax*pH-6);
+  // volume
+  c.fillStyle=HC.txt;c.font='11px "IBM Plex Mono", monospace';c.textAlign='right';c.fillText(vmax,L0-6,vT+8);c.fillText(vmin,L0-6,vT+vH);
+  c.save();c.translate(14,vT+vH/2);c.rotate(-Math.PI/2);c.textAlign='center';c.fillText('LV mL',0,0);c.restore();
+  if(HN)line(HN.Vlv,HC.dim,vT,vH,vmin,vmax,1,[4,4]);line(HD.Vlv,HC.vol,vT,vH,vmin,vmax,2);
+  // ECG lead II (this patient)
+  let emin=1e9,emax=-1e9;for(let j=w.a;j<=w.b;j++){emin=Math.min(emin,L.II[j]);emax=Math.max(emax,L.II[j])}const pad=(emax-emin)*.1+.05;
+  line(L.II,HC.ecg,eT,eH,emin-pad,emax+pad,1.5);c.save();c.translate(14,eT+eH/2);c.rotate(-Math.PI/2);c.textAlign='center';c.fillStyle=HC.txt;c.fillText('ECG II',0,0);c.restore();
+  // phonocardiogram
+  c.strokeStyle='#e9e1cf';c.lineWidth=1;c.beginPath();const mid=sT+sH/2;let sd=12345;
+  for(let j=w.a;j<=w.b;j++){const a=phonoAt(HD,j);sd=(sd*16807)%2147483647;const nz=(sd/2147483647-.5)*2;c.moveTo(xs(j),mid);c.lineTo(xs(j),mid+nz*a*sH/2)}c.stroke();
+  c.save();c.translate(14,mid);c.rotate(-Math.PI/2);c.textAlign='center';c.fillStyle=HC.txt;c.fillText('Sounds',0,0);c.restore();
+  if(ev){c.fillStyle=HC.txt;c.font='700 11px Archivo, Arial, sans-serif';c.textAlign='center';if(ev.mc>0&&ev.mc>=w.a)c.fillText('S1',xs(ev.mc),sT-1);if(ev.ac>0)c.fillText('S2',xs(ev.ac),sT-1)}
+  // valve bars
+  const bar=(arr,y,label,col,regur)=>{c.fillStyle=HC.txt;c.font='600 10px Archivo, Arial, sans-serif';c.textAlign='right';c.fillText(label,L0-6,y+8);
+    for(let j=w.a;j<w.b;j++){const q=arr[j];if(q>0.5){c.fillStyle=col;c.fillRect(xs(j),y,xs(j+1)-xs(j)+.5,9)}else if(regur&&q<-0.5){c.fillStyle='#b0262f';c.fillRect(xs(j),y+2,xs(j+1)-xs(j)+.5,5)}}};
+  bar(HD.Qmv,bT,'Mitral',HC.vol,HD.p.Rmr<1e8);bar(HD.Qav,bT+13,'Aortic',HC.ao,HD.p.Rar<1e8);
+  // cursor
+  if(i>=w.a&&i<=w.b){const x=xs(i);c.strokeStyle='rgba(255,250,219,.9)';c.lineWidth=1.5;c.beginPath();c.moveTo(x,top-8);c.lineTo(x,bT+24);c.stroke();
+    c.fillStyle='#fffadb';for(const [arr,y0,h,lo,hi] of [[HD.Plv,top,pH,0,pmax],[HD.Pao,top,pH,0,pmax],[HD.Vlv,vT,vH,vmin,vmax]]){c.beginPath();c.arc(x,y0+h-(arr[i]-lo)/(hi-lo)*h,3.5,0,6.283);c.fill()}}
+}
+function drawPV(i){
+  if(!HD||!W2)return;const c=px;c.setTransform(d2,0,0,d2,0,0);c.fillStyle='#0b0b0b';c.fillRect(0,0,W2,H2);
+  const k=beatAt(i),ev=HD.ev[k];if(!ev||ev.mc<0)return;
+  const s=ev.mc,e=Math.min(N-1,(HD.ev[k+1]&&HD.ev[k+1].mc>0)?HD.ev[k+1].mc:ev.end);
+  let vmax=160,pmax=140;for(const D of [HD,HN]){if(!D)continue;for(let j=s;j<=e;j++){vmax=Math.max(vmax,D.Vlv[j]*1.12);pmax=Math.max(pmax,D.Plv[j]*1.1)}}
+  vmax=Math.ceil(vmax/40)*40;pmax=Math.ceil(pmax/20)*20;
+  const L0=56,B0=H2-150,T0=104,R0=W2-20,xs=v=>L0+v/vmax*(R0-L0),ys=p=>B0-p/pmax*(B0-T0);
+  c.strokeStyle=HC.grid;c.fillStyle=HC.txt;c.font='11px "IBM Plex Mono", monospace';c.textAlign='center';
+  for(let v=0;v<=vmax;v+=40){c.beginPath();c.moveTo(xs(v),T0);c.lineTo(xs(v),B0);c.stroke();c.fillText(v,xs(v),B0+16)}
+  c.textAlign='right';for(let p=0;p<=pmax;p+=pmax>200?50:20){c.beginPath();c.moveTo(L0,ys(p));c.lineTo(R0,ys(p));c.stroke();c.fillText(p,L0-6,ys(p)+4)}
+  c.textAlign='center';c.fillText('LV volume (mL)',(L0+R0)/2,B0+34);c.save();c.translate(16,(T0+B0)/2);c.rotate(-Math.PI/2);c.fillText('LV pressure (mmHg)',0,0);c.restore();
+  const p=HD.p;c.lineWidth=1.2;c.setLineDash([6,4]);c.strokeStyle='rgba(207,174,112,.55)';c.beginPath();c.moveTo(xs(p.V0),ys(0));c.lineTo(xs(Math.min(vmax,p.V0+pmax/p.Ees)),ys(Math.min(pmax,(vmax-p.V0)*p.Ees)));c.stroke();
+  c.strokeStyle='rgba(143,184,201,.55)';c.beginPath();for(let v=p.Vd;v<=vmax;v+=2){const pp=p.A*(Math.exp(p.B*(v-p.Vd))-1);if(pp>pmax)break;v===p.Vd?c.moveTo(xs(v),ys(pp)):c.lineTo(xs(v),ys(pp))}c.stroke();c.setLineDash([]);
+  c.font='600 11px Archivo, Arial, sans-serif';c.fillStyle='rgba(207,174,112,.8)';c.textAlign='right';c.fillText('ESPVR (contractility)',xs(p.V0+pmax*.97/p.Ees)-8,ys(pmax*.97)+4);
+  {let vv=p.Vd;while(vv<vmax&&p.A*(Math.exp(p.B*(vv-p.Vd))-1)<pmax*.3)vv+=1;const pp=p.A*(Math.exp(p.B*(vv-p.Vd))-1);c.fillStyle='rgba(143,184,201,.85)';c.textAlign='right';c.fillText('EDPVR (compliance)',Math.min(R0-4,xs(vv)-8),ys(pp)-6)}
+  const loop=(D,col,lw,dash)=>{c.strokeStyle=col;c.lineWidth=lw;c.setLineDash(dash||[]);c.beginPath();for(let j=s;j<=e;j++){j===s?c.moveTo(xs(D.Vlv[j]),ys(D.Plv[j])):c.lineTo(xs(D.Vlv[j]),ys(D.Plv[j]))}c.stroke();c.setLineDash([])};
+  if(HN){loop(HN,HC.dim,1.4,[5,4]);c.fillStyle=HC.dim;c.textAlign='left';c.fillText('normal',xs(HN.Vlv[s])+6,ys(HN.Plv[s])+14)}
+  c.fillStyle='rgba(207,174,112,.12)';c.beginPath();for(let j=s;j<=e;j++){j===s?c.moveTo(xs(HD.Vlv[j]),ys(HD.Plv[j])):c.lineTo(xs(HD.Vlv[j]),ys(HD.Plv[j]))}c.fill();
+  loop(HD,HC.ao,2.4);
+  c.fillStyle='#e9e1cf';c.font='700 11px Archivo, Arial, sans-serif';
+  const mark=(j,t,dx,dy,al)=>{if(j<0)return;c.beginPath();c.arc(xs(HD.Vlv[j]),ys(HD.Plv[j]),3,0,6.283);c.fill();c.textAlign=al;c.fillText(t,xs(HD.Vlv[j])+dx,ys(HD.Plv[j])+dy)};
+  mark(ev.mc,'Mitral closes',8,14,'left');mark(ev.ao,'Aortic opens',8,4,'left');mark(ev.ac,'Aortic closes',-8,-6,'right');mark(ev.mo,'Mitral opens',-8,14,'right');
+  if(i>=s&&i<=e){c.fillStyle='#fffadb';c.beginPath();c.arc(xs(HD.Vlv[i]),ys(HD.Plv[i]),6,0,6.283);c.fill();c.strokeStyle='#0b0b0b';c.lineWidth=2;c.stroke()}
+  const m=beatMetrics(HD,k);if(!m)return;
+  const items=[['EDV',m.edv.toFixed(0)+' mL'],['ESV',m.esv.toFixed(0)+' mL'],['Stroke vol.',m.sv.toFixed(0)+' mL'],['EF',m.ef.toFixed(0)+'%'],['Forward SV',m.fwd.toFixed(0)+' mL'],['Cardiac output',m.co.toFixed(1)+' L/min'],['LVEDP',m.edp.toFixed(0)+' mmHg'],['Aortic',m.aoMax.toFixed(0)+'/'+m.aoMin.toFixed(0)],['Mean LA',m.lap.toFixed(0)+' mmHg'],['Stroke work',(m.sw*1.333e-4).toFixed(2)+' J']];
+  const cols=W2<520?2:5,cw=(W2-32)/cols;c.textAlign='left';
+  items.forEach(([k2,v],j)=>{const x=16+(j%cols)*cw,y=B0+58+Math.floor(j/cols)*38;c.fillStyle=HC.txt;c.font='600 10px Archivo, Arial, sans-serif';c.fillText(k2.toUpperCase(),x,y);c.fillStyle='#f6f1e4';c.font='800 17px Archivo, Arial, sans-serif';c.fillText(v,x,y+18)});
+}
+function setHview(v){hview=v;document.querySelectorAll('.stabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.t===v));
+  $('three').hidden=v!=='three';document.querySelectorAll('.only3d').forEach(e=>e.hidden=v!=='three');$('wig').hidden=v!=='wig';$('pvl').hidden=v!=='pv';$('hemoBar').hidden=v==='three';
+  if(v!=='three'){sizeHemo()}else sizeThree()}
+document.querySelectorAll('.stabs button').forEach(b=>b.onclick=()=>setHview(b.dataset.t));
+const hsel=$('hcond');for(const k in HCONDS){const o=document.createElement('option');o.value=k;o.textContent=HCONDS[k][0];hsel.appendChild(o)}
+hsel.onchange=()=>{hcond=hsel.value;runHemo()};
+new ResizeObserver(()=>{if(hview!=='three')sizeHemo()}).observe(document.querySelector('.stage'));
+function drawHemo(){if(hview==='three')return;const i=clamp(Math.floor(tau*FS),0,N-1);if(hview==='wig')drawWiggers(i);else drawPV(i)}
+
+/* ---------- loop ---------- */
+let prevT=performance.now();
+function frame(now){const dt=Math.min(.05,(now-prevT)/1000);prevT=now;tau=(tau+dt*speed)%DUR;drawOverlay();if(hview==='three')updateThree();else{drawHemo();const i=clamp(Math.floor(tau*FS),0,N-1);const lv=L?L[sel][i]:0;$('projV').textContent=(lv>=0?'+':'')+lv.toFixed(2)}syncScrub();requestAnimationFrame(frame)}
+
+/* ---------- boot ---------- */
+initThree();setLead('II');renderPicker();
+new ResizeObserver(paperLayout).observe($('paperbox'));paperLayout();
+requestAnimationFrame(frame);pickReal(curCat,0).then(()=>{tau=1.2});
+})();
+
+</script>
+
+</body></html>
