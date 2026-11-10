@@ -18,6 +18,11 @@ Originally built as a claude.ai artifact (https://claude.ai/code/artifact/2ec6df
 - The 12SL QRS axis column is empty in PTB-XL+, so the manifest `ax` is computed as atan2(QRS_Area_aVF, QRS_Area_I) from the 12SL features (the original stored axes disagreed by more than 30° in 21 records). With it, three LAFB records (4444, 16678, 14123) measure −32° to −37°, short of the −45° LAFB criterion.
 - Beat lists were audited against an independent detector (2026-11-10): non-QRS beats removed, missed beats added, 6685 and 8177 re-detected (their old lists sat on P waves, now used as their P lists), stale P lists rebuilt. Audit report: ecg-audit.md in the session folder.
 
+## Explanations
+
+- `MECH` (per category): a mechanism paragraph plus a diagram spec rendered by `heartSVG()` (frontal schematic: chambers, conduction system, blocks, regions, re-entry, ectopic focus, mean-QRS inset). Shown in the condition card via `catBody` → `mechHTML`, so it also appears in quiz reveals.
+- "Mark findings" (`ANN`, `buildAnn`, `drawAnn` on the overlay canvas): per-category rules that box leads, bracket intervals on the rhythm strip and mark beats, using 12SL values from `data/features.json` (now also `QD`/`QA` Q-wave duration/depth, `TA` T amplitude, `PP` QRS peak-to-peak). Hidden while a quiz question is unanswered.
+
 ## Quiz modes
 
 All three open in a focus view (`body.focus`: tracing + question, everything else hidden, View Transitions animation, reduced-motion respected) via `setQuiz(mode)`:

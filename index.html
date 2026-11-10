@@ -172,6 +172,14 @@ fieldset:disabled .chips{opacity:.45} fieldset:disabled .chip{cursor:not-allowed
 .gtally .dxh{margin:0 4px 0 0}
 .gtally b{color:var(--ink)} .gtally .weak{border-color:var(--bad);background:#f8e3e4}
 .glink{background:none;border:0;padding:0;color:var(--dgold);text-decoration:underline;font-size:13px}
+.why{display:grid;grid-template-columns:minmax(200px,300px) minmax(0,1fr);gap:14px 24px;align-items:start;padding-top:14px;border-top:1px solid var(--line)}
+@media (max-width:720px){.why{grid-template-columns:1fr}}
+.why h3{font-family:var(--f-display);font-weight:700;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--deep);margin:0 0 4px}
+.why p{margin:0 0 8px;max-width:68ch}
+.whyfig{display:grid;gap:4px}
+.heartsvg{width:100%;max-width:300px;height:auto;background:#fffaf4;border:1px solid var(--line);border-radius:10px}
+.whycap{margin:0;font-size:12px;color:var(--muted)}
+.whyhint{font-size:14px;color:var(--muted)}
 .gsub{margin:0;color:var(--muted);font-size:14px;max-width:70ch}
 /* median-beat magnifier */
 .medzoom{border-top:1px solid var(--line);padding:10px 16px 12px;display:grid;gap:8px;background:#fff}
@@ -228,6 +236,7 @@ body.focus .card h2{font-size:24px}
     </div>
     <div class="sheettools">
       <button class="tool" id="calBtn" aria-pressed="false">Calipers</button>
+      <button class="tool" id="annBtn" aria-pressed="false">Mark findings</button>
       <button class="tool" id="medBtn" aria-pressed="false" aria-controls="medzoom">Median beat</button>
       <span class="calread dim" id="calRead">Turn on calipers, then tap two points on the tracing.</span>
     </div>
@@ -296,6 +305,7 @@ body.focus .card h2{font-size:24px}
     <p><b>Wiggers and PV loop.</b> A lumped time-varying elastance model of both ventricles, left atrium, systemic and pulmonary circulations (Suga–Sagawa elastance; three-element Windkessel aorta), integrated at 0.5 ms. Ventricular contraction starts 40 ms after this patient's QRS onset and relaxation ends with their T wave; the atria contract on their detected P waves (none in AF or flutter). PTB-XL contains no pressures, so every pressure and volume shown is simulated; conditions are teaching presets, not this patient's physiology.</p>
     <p><b>Measurements.</b> Ventricular rate, PR, QRS, QT/QTc, per-lead R, S and ST amplitudes, P and T axes, fiducial points and the magnified median beats are GE Marquette 12SL output published in PTB-XL+ v1.0.1 (Strodthoff N et al. <i>Sci Data</i> 2023, doi:10.1038/s41597-023-02153-8), via PhysioNet, CC BY 4.0. Beat positions were checked against the 12SL ventricular rate and an independent QRS detector, and corrected where they disagreed. The QRS axis is the frontal axis from the 12SL net QRS areas in leads I and aVF (dominant beat).</p>
     <p><b>Guided read and axis drill.</b> Rate, intervals and voltage are graded against 12SL within stated tolerances (20 ms for PR and QRS, 40 ms for QT); rhythm, chamber enlargement and ischemia against the cardiologist statements. The axis drill is graded within 20° of the record's axis.</p>
+    <p><b>Explanations and marked findings.</b> Mechanism notes and diagrams are schematic teaching summaries. Marks on the tracing come from this patient's 12SL measurements (ST at the J point, Q-wave duration and depth, T-wave amplitude, R and S amplitudes, intervals) and are shown only where a value crosses the usual cutoff.</p>
     <p><b>Not for clinical use.</b> Teaching material. Interval measurements are left to the calipers on purpose.</p>
   </section>
 </div>
@@ -480,7 +490,7 @@ let L=null,H=null,beatsR=[],meas=null,sel='II',modelP=[];
 /* ---------- real data ---------- */
 // PTB-XL+ (GE 12SL) measurements per record: intervals, axes, per-lead R/S/ST amplitudes (mV), fiducials (ms into the median beat)
 let FEAT=null,MED=null,medP=null;
-const featP=fetch('data/features.json').then(r=>r.ok?r.json():{}).catch(()=>({})).then(j=>{FEAT=j;if(rec)renderHead()});
+const featP=fetch('data/features.json').then(r=>r.ok?r.json():{}).catch(()=>({})).then(j=>{FEAT=j;if(rec){renderHead();buildAnn()}});
 const feat=r=>FEAT&&r?FEAT[r.id]||null:null;
 function loadMed(){if(!medP)medP=fetch('data/medians.json').then(r=>r.ok?r.json():{}).catch(()=>({})).then(j=>{MED=j;drawMed()});return medP}
 const cache=new Map();
@@ -626,6 +636,7 @@ function drawOverlay(){
   LAYOUT.forEach((r,ri)=>r.forEach((k,ci)=>{if(k===sel){og.strokeStyle='#866a2e';og.lineWidth=2;og.strokeRect((X0+ci*62.5)*mm+1,(ROWY[ri]-15)*mm,62.5*mm-2,28*mm)}}));
   const x=(X0+tau*25)*mm;og.fillStyle='rgba(207,174,112,.18)';og.fillRect(x-14,0,14,PH);
   og.strokeStyle='rgba(134,106,46,.9)';og.lineWidth=2;og.beginPath();og.moveTo(x,0);og.lineTo(x,PH);og.stroke();
+  drawAnn();
   if(cal.on&&cal.pts.length){
     og.strokeStyle='#0b5cad';og.fillStyle='#0b5cad';og.lineWidth=1.5;
     for(const p of cal.pts){og.beginPath();og.moveTo(p[0]*mm,(p[1]-6)*mm);og.lineTo(p[0]*mm,(p[1]+6)*mm);og.stroke();og.beginPath();og.arc(p[0]*mm,p[1]*mm,3,0,6.283);og.fill()}
@@ -867,7 +878,7 @@ async function pickReal(k,idx){
   try{await loadRec(byCat[k][idx%byCat[k].length])}catch(e){$('loading').textContent='Couldn’t load this tracing. Try another patient.';return}
   if(mode!=='real')return;// switched to the teaching model while this loaded
   prepBeats(CAT2T[k]||'normal',rec.am||'p',rec.p,rec.am!=='p'||rec.p.length>0);setStageLab();
-  if(three)three.loopBeat=-1;drawPaper();renderHead();MZ.pts=[];drawMed();if(!quiz.on)renderCard();
+  if(three)three.loopBeat=-1;drawPaper();renderHead();MZ.pts=[];drawMed();buildAnn();if(!quiz.on)renderCard();
 }
 function pickModel(k){curModel=k;hr=MP[k].hr;$('hr').value=hr;$('hrOut').textContent=hr;markChips();regenModel();renderCard()}
 function regenModel(){synthModel();prepBeats(MOD2T[curModel]||'normal',MP[curModel].af?'af':'p',MP[curModel].af?[]:modelP,true);setStageLab();if(three)three.loopBeat=-1;drawPaper();renderHead()}
@@ -903,17 +914,176 @@ function setStageLab(){const note=mode==='real'&&rec&&rec.am==='p'&&!rec.p.lengt
 function setMode(m){
   if(m===mode)return;if(quiz.on)toggleQuiz();mode=m;// leave the quiz while still in real mode
   $('tabReal').setAttribute('aria-selected',m==='real');$('tabModel').setAttribute('aria-selected',m==='model');
-  $('hrRow').hidden=m==='real';$('quiz').hidden=m!=='real';$('guide').hidden=m!=='real';$('vec').hidden=m!=='real';$('medBtn').hidden=m!=='real';if(m!=='real')setMed(false);$('another').textContent=m==='real'?'Another patient':'New tracing';
+  $('hrRow').hidden=m==='real';$('quiz').hidden=m!=='real';$('guide').hidden=m!=='real';$('vec').hidden=m!=='real';$('medBtn').hidden=m!=='real';$('annBtn').hidden=m!=='real';if(m!=='real')setMed(false);$('another').textContent=m==='real'?'Another patient':'New tracing';
   setStageLab();
   $('mastP').textContent=m==='real'?`${MAN.recs.length} real 12-leads read by cardiologists, each shown with its own 3D heart vector reconstructed from the tracing.`:'A single moving dipole drives all twelve leads. Change the vector, watch every lead respond.';
   renderPicker();if(m==='real')pickReal(curCat,recIdx);else pickModel(curModel);
 }
 $('tabReal').onclick=()=>setMode('real');$('tabModel').onclick=()=>setMode('model');
 
+/* ---------- why it looks like this: mechanism per condition + conduction diagram ---------- */
+// d = diagram spec: block/delay (conduction segments), region (infarct/ischemia), thick (hypertrophy), big (atrium), ect (ectopic focus),
+// loop (re-entry), af, pace, ap (accessory pathway), ring (insulation), repol, sa (sinus rate), vec (typical frontal QRS direction, degrees)
+const MECH={
+ normal:{t:'The SA node fires; the wave crosses the right then left atrium (P wave, pointing down and left, so upright in I and II), pauses in the AV node (PR segment), then the His–Purkinje system activates the ventricles within about 80 ms. The septum goes first, left to right (the small q in I and V6), then both free walls. The thick left ventricle dominates, so the mean QRS vector points down and to the left, near +60°.',d:{vec:60}},
+ sbrad:{t:'The pathway is normal; only the SA node fires more slowly, from high vagal tone, drugs such as beta-blockers, or sinus-node disease. Each beat is normal and only the pause between beats lengthens.',d:{sa:'slow',vec:60}},
+ stach:{t:'Sympathetic drive and catecholamines speed SA-node depolarization. Diastole shortens far more than systole, so each P wave creeps toward the preceding T wave. The underlying cause is what needs treating.',d:{sa:'fast',vec:60}},
+ sarrh:{t:'Breathing in lowers vagal tone and the SA node speeds up; breathing out slows it again. The pacemaker never changes, so every P wave has the same shape and the PR stays constant while the R–R interval cycles.',d:{sa:'vary',vec:60}},
+ afib:{t:'Many small re-entrant wavelets, often triggered from the pulmonary veins, activate the atria chaotically at 350–600 per minute. With no organized atrial wavefront there is no P wave, only a fibrillatory baseline. The AV node lets impulses through at random, so the ventricular rhythm is irregularly irregular, while ventricular conduction itself is normal and the QRS stays narrow.',d:{af:true,vec:60}},
+ aflt:{t:'A single large re-entry circuit runs around the tricuspid valve in the right atrium, through the cavotricuspid isthmus, at about 300 per minute. In typical (counterclockwise) flutter the wave travels up the atrial septum, giving negative sawtooth flutter waves in II, III and aVF. The AV node usually passes every second wave, so the ventricular rate is near 150.',d:{loop:'ra',vec:60}},
+ svt:{t:'Most often AV-nodal re-entry: two pathways in or near the AV node, one fast and one slow, form a tiny circuit. Each lap sends the impulse down to the ventricles normally (narrow QRS) and back up to the atria at the same moment, so the retrograde P wave hides inside the QRS or just after it.',d:{loop:'av',vec:60}},
+ pac:{t:'A focus in the atrial wall fires before the SA node is due. Because the wave starts somewhere else, its P wave has a different shape and often a different PR. The impulse conducts normally to the ventricles, so the QRS is narrow, and it resets the SA node, so the pause after it is not fully compensatory.',d:{ect:'a',vec:60}},
+ pvc:{t:'A ventricular focus fires early. Its wave spreads slowly from muscle cell to muscle cell instead of through the Purkinje network, so the QRS is wide and bizarre, and repolarization follows the abnormal path, so the T wave points opposite the QRS. The SA node keeps its own time, giving a fully compensatory pause.',d:{ect:'v',vec:60}},
+ bigu:{t:'An ectopic focus fires after every normal beat at a fixed coupling interval, usually through re-entry or triggered activity linked to the preceding beat. Whether it is atrial (narrow, abnormal P) or ventricular (wide, no P) decides the meaning.',d:{ect:'v',vec:60}},
+ pace:{t:'The pacing lead tip usually sits in the right ventricular apex. Depolarization starts there and spreads cell to cell from right to left and from apex to base, bypassing the Purkinje system: a wide QRS that looks like LBBB, with a superior (left) axis and a discordant ST–T.',d:{pace:true,vec:-60}},
+ avb1:{t:'Conduction through the AV node is slowed, usually from vagal tone, AV-nodal drugs or nodal disease. Every atrial impulse still reaches the ventricles, just late, so the PR is long and constant and the QRS is normal.',d:{delay:['av'],vec:60}},
+ avb2:{t:'Some atrial impulses never reach the ventricles. In Mobitz I (Wenckebach) the AV node tires progressively, so the PR lengthens until a beat drops. In Mobitz II the block lies below the node in the His–Purkinje system and fails all at once, without warning, which is why it is more dangerous.',d:{drop:true,vec:60}},
+ avb3:{t:'No atrial impulse crosses to the ventricles. The atria follow the SA node, while the ventricles follow an escape pacemaker below the block: junctional (narrow, 40–60 per minute) or ventricular (wide, 20–40). Two independent rhythms run side by side, so the PR varies at random.',d:{block:['his'],vec:60}},
+ lafb:{t:'The anterior fascicle of the left bundle, which serves the anterior and superior left ventricle, is blocked. Activation enters through the posterior fascicle first (inferior wall: small q in I and aVL, small r in II, III, aVF), then spreads late up and to the left. The dominant vector points superior and leftward: left axis beyond −45°, rS in the inferior leads.',d:{block:['laf'],vec:-60}},
+ lpfb:{t:'The posterior fascicle is blocked, so the left ventricle activates first through the anterior fascicle (high lateral wall), then spreads late down and to the right to the inferior–posterior wall. The mean vector swings right and inferior: right axis with rS in I and qR in III.',d:{block:['lpf'],vec:120}},
+ irbbb:{t:'The right bundle conducts slowly, or a volume-loaded right ventricle simply takes longer to activate. The right ventricle finishes slightly late, adding a small terminal rightward and anterior force: an r′ in V1, while the QRS stays under 120 ms.',d:{delay:['rbb'],vec:60}},
+ rbbb:{t:'The right bundle is blocked. The septum and left ventricle activate normally, so the start of the QRS looks normal. The right ventricle then activates late and slowly, cell to cell from the left, adding a terminal force pointing right and anterior: a late R′ in V1 and a broad S in I and V6, with QRS 120 ms or more.',d:{block:['rbb'],vec:60}},
+ lbbb:{t:'The left bundle is blocked. The septum is activated from the right side, right to left, so the normal septal q in I and V6 disappears. The left ventricle is then activated slowly, cell to cell, so the whole QRS points left and posterior: broad notched R in I and V6, deep S in V1. Repolarization follows the abnormal sequence, giving ST–T discordant to the QRS.',d:{block:['lbb'],vec:-15}},
+ bifasc:{t:'The right bundle and the anterior fascicle are both blocked, so only the posterior fascicle still conducts. The QRS combines RBBB (late R′ in V1, slurred S in I) with LAFB (superior, left axis). One fascicle is left between this patient and complete heart block.',d:{block:['rbb','laf'],vec:-60}},
+ wpw:{t:'An accessory pathway (bundle of Kent) connects atrium to ventricle and bypasses the AV-node delay. Muscle near its insertion starts depolarizing early, slowly and cell to cell: the slurred delta wave and short PR. The rest of the ventricle is activated through the normal system, so the QRS is a fusion of the two, with secondary ST–T changes.',d:{ap:true,vec:60}},
+ ivcd:{t:'Conduction slows diffusely in the Purkinje network and muscle (fibrosis, cardiomyopathy, drugs, hyperkalemia) rather than in one bundle. The QRS widens without the clean pattern of either bundle branch block.',d:{delay:['purk'],vec:30}},
+ inf_acute:{t:'Occlusion, usually of the right coronary artery, injures the full thickness of the inferior wall. Injured cells sit at a different voltage from healthy ones, so an injury current flows toward the damaged region and the ST vector points down at it: ST elevation in II, III and aVF, with reciprocal ST depression in I and aVL, which face the opposite way.',d:{region:'inf',acute:true,vec:60}},
+ ant_acute:{t:'Occlusion of the left anterior descending artery injures the septum and anterior wall. The injury current points forward, toward the precordial leads: ST elevation from V1 to V4. Loss of septal and anterior forces also shrinks the R waves in V1–V3.',d:{region:'ant',acute:true,vec:60}},
+ lat_mi:{t:'Infarction of the lateral wall (circumflex or diagonal territory) leaves muscle that no longer depolarizes. Leads facing it, I, aVL, V5 and V6, now see the vector moving away through the dead "window": Q waves, with ST–T changes when acute.',d:{region:'lat',vec:60}},
+ post_mi:{t:'No standard lead faces the posterior wall; V1–V3 look at it from the front. Everything appears as a mirror image: the posterior Q wave becomes a tall, broad R in V1–V2, and posterior ST elevation becomes ST depression in V1–V3.',d:{region:'post',vec:60}},
+ inf_old:{t:'Scar in the inferior wall is electrically silent. Leads II, III and aVF look through it and record the opposite wall depolarizing away from them: pathological Q waves. Once the scar has formed, the injury current is gone and the ST segments return to baseline.',d:{region:'inf',vec:30}},
+ ant_old:{t:'Scar in the septum and anterior wall removes the forces that normally point toward V1–V3. Those leads record Q or QS complexes, and the R waves fail to grow across the precordium (poor R-wave progression).',d:{region:'ant',vec:60}},
+ isc:{t:'Ischemia without full occlusion affects mostly the inner (subendocardial) layer. The injury current points toward the ventricular cavity, away from the surface leads, giving ST depression and T inversion. Unlike ST elevation, ST depression does not reliably localize the culprit artery.',d:{region:'sub',vec:60}},
+ lvh:{t:'A thicker left ventricular wall means more muscle depolarizing, so the left-dominated vector gets larger: tall R waves in the left-facing leads (I, aVL, V5–V6) and deep S waves in the right-facing ones (V1–V2). Activation takes slightly longer, and repolarization of the thick wall is abnormal, giving lateral ST depression with asymmetric T inversion ("strain").',d:{thick:'lv',vec:30}},
+ rvh:{t:'Right ventricular mass grows until it rivals or exceeds the left. The mean vector swings right and anterior: right axis, a dominant R in V1, and deep S waves in V5–V6. Pressure load also distorts right-sided repolarization (ST depression and T inversion in V1–V3).',d:{thick:'rv',vec:110}},
+ lae:{t:'The left atrium is activated last, so it forms the second half of the P wave, pointing left and posterior. When it is enlarged, that late part lasts longer: a broad, notched P in II (120 ms or more), and a deep, wide terminal negative deflection in V1, which faces away from the posterior left atrium.',d:{big:'la',vec:60}},
+ rae:{t:'The right atrium is activated first, so it forms the early part of the P wave, pointing down and forward. When it is enlarged, that early part grows taller without lasting longer: a tall, peaked P in II, III and aVF (over 2.5 mm), and a tall initial P in V1.',d:{big:'ra',vec:60}},
+ lvolt:{t:'The voltage measured at the skin falls when something sits between the heart and the electrodes (pericardial fluid, fat, hyperinflated lungs) or when working muscle is lost or replaced (amyloid, extensive infarction, myxedema). The vector is normal in direction, just small everywhere.',d:{ring:true,vec:60}},
+ lqt:{t:'Ventricular repolarization takes longer because outward potassium currents are reduced: an inherited channelopathy, drugs that block the IKr (hERG) channel, or low potassium, magnesium or calcium. The action-potential plateau lengthens, so the QT does too, and early afterdepolarizations can trigger torsades de pointes.',d:{repol:'long',vec:60}},
+ dig:{t:'Digoxin inhibits the Na⁺/K⁺ ATPase, which raises intracellular calcium and shortens the ventricular action potential. Repolarization starts early and unevenly: a scooped, sagging ST depression and a short QT. Its vagal effect also slows conduction through the AV node.',d:{repol:'short',vec:60}}
+};
+function heartSVG(d){
+  const P=[],X=(x,y,c='#b0262f')=>`<path d="M${x-7},${y-7}L${x+7},${y+7}M${x+7},${y-7}L${x-7},${y+7}" stroke="${c}" stroke-width="3.5" stroke-linecap="round"/>`;
+  const seg={his:[143,123],rbb:[126,168],lbb:[154,137],laf:[196,129],lpf:[180,186],av:[140,114],purk:[180,214]};
+  const thick=d.thick,big=d.big;
+  // chambers
+  P.push(`<ellipse cx="92" cy="80" rx="${big==='ra'?52:42}" ry="${big==='ra'?42:34}" fill="${big==='ra'?'#f3d9a8':'#f4e6ce'}" stroke="#c9b98f"/>`);
+  P.push(`<ellipse cx="192" cy="66" rx="${big==='la'?52:40}" ry="${big==='la'?36:26}" fill="${big==='la'?'#f3d9a8':'#f4e6ce'}" stroke="#c9b98f"/>`);
+  P.push(`<path d="M60,122 Q58,178 150,244 Q246,180 238,122 Q228,100 196,100 L110,110 Q70,110 60,122 Z" fill="${d.repol?'#ead9f2':'#f1d7cf'}" stroke="#c99a8e"/>`);
+  if(d.region){const R={inf:'M78,186 Q150,262 222,186 Q216,212 150,246 Q86,212 78,186 Z',ant:'M141,124 L178,124 L190,214 L162,236 L152,232 Z',lat:'M212,118 Q246,124 238,172 Q230,192 214,198 L204,150 Z'}[d.region];
+    if(R)P.push(`<path d="${R}" fill="${d.acute?'#e0525c':'#8a8378'}" fill-opacity="${d.acute?.55:.45}"/>`);
+    if(d.region==='post')P.push(`<ellipse cx="200" cy="150" rx="34" ry="46" fill="#8a8378" fill-opacity=".25" stroke="#5c564b" stroke-dasharray="4 3"/><text x="150" y="256" text-anchor="middle" font-size="10" font-weight="700" fill="#5c564b">dashed: posterior wall, seen from behind</text>`);
+    if(d.region==='sub')P.push(`<ellipse cx="190" cy="168" rx="26" ry="42" transform="rotate(-20 190 168)" fill="none" stroke="#e0525c" stroke-width="7" stroke-opacity=".6"/>`)}
+  // cavities (wall thickness)
+  P.push(`<ellipse cx="190" cy="168" rx="${thick==='lv'?12:22}" ry="${thick==='lv'?28:38}" transform="rotate(-20 190 168)" fill="#fbf1ec" stroke="#c99a8e"/>`);
+  P.push(`<ellipse cx="98" cy="160" rx="${thick==='rv'?8:16}" ry="${thick==='rv'?22:30}" transform="rotate(25 98 160)" fill="#fbf1ec" stroke="#c99a8e"/>`);
+  if(thick)P.push(`<text x="${thick==='lv'?250:42}" y="${thick==='lv'?190:150}" text-anchor="middle" font-size="10" font-weight="700" fill="#7a5f25">thick ${thick.toUpperCase()}</text>`);
+  P.push(`<line x1="148" y1="122" x2="158" y2="234" stroke="#c99a8e" stroke-width="2"/>`);
+  // labels
+  [['RA',78,92],['LA',206,70],['RV',96,196],['LV',204,210]].forEach(([s,x,y])=>P.push(`<text x="${x}" y="${y}" font-size="11" font-weight="700" fill="#7a5f25" font-family="Archivo, Arial">${s}</text>`));
+  // conduction system
+  const cs='#866a2e';
+  P.push(`<path d="M66,56 Q100,100 140,114" stroke="${cs}" stroke-width="2" fill="none" stroke-dasharray="3 3"/>`);
+  P.push(`<path d="M140,114 L146,132 M146,132 L124,170 L108,206 M146,132 L162,142 M162,142 L204,126 L226,146 M162,142 L186,188 L178,220" stroke="${cs}" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`);
+  P.push(`<path d="M108,206 l-8,10 M108,206 l6,12 M226,146 l6,12 M226,146 l10,-2 M178,220 l-8,10 M178,220 l8,8" stroke="${cs}" stroke-width="1.5"/>`);
+  P.push(`<circle cx="66" cy="56" r="7" fill="${cs}"/><text x="50" y="42" font-size="10" font-weight="700" fill="#2e2b26">SA</text>`);
+  P.push(`<circle cx="140" cy="114" r="6" fill="${cs}"/><text x="114" y="128" font-size="10" font-weight="700" fill="#2e2b26">AV</text>`);
+  if(d.sa){const s={slow:'fires slowly',fast:'fires fast',vary:'speeds and slows with breathing'}[d.sa];P.push(`<circle cx="66" cy="56" r="13" fill="none" stroke="#0b5cad" stroke-width="2"/><text x="82" y="34" font-size="10" fill="#0b5cad" font-weight="700">${s}</text>`)}
+  for(const k of d.block||[]){const [x,y]=seg[k];P.push(X(x,y))}
+  for(const k of d.delay||[]){const [x,y]=seg[k];P.push(`<circle cx="${x}" cy="${y}" r="11" fill="#f0a35c" fill-opacity=".35" stroke="#c46a12" stroke-width="2" stroke-dasharray="3 2"/><text x="${x+14}" y="${y+4}" font-size="10" font-weight="700" fill="#c46a12">slow</text>`)}
+  if(d.drop)P.push(`<circle cx="140" cy="114" r="11" fill="none" stroke="#c46a12" stroke-width="2"/>${X(160,104,'#c46a12')}<text x="168" y="100" font-size="10" font-weight="700" fill="#c46a12">some impulses blocked</text>`);
+  if(d.ect){const [x,y]=d.ect==='a'?[200,60]:[214,176],st=[];for(let i=0;i<10;i++){const r=i%2?4:10,a=i*Math.PI/5-Math.PI/2;st.push(`${x+r*Math.cos(a)},${y+r*Math.sin(a)}`)}
+    P.push(`<polygon points="${st.join(' ')}" fill="#0b5cad"/><text x="${x-10}" y="${y-14}" font-size="10" font-weight="700" fill="#0b5cad">early focus</text>`)}
+  if(d.loop){const [x,y,r]=d.loop==='ra'?[96,92,26]:[140,114,14];P.push(`<path d="M${x+r},${y} A${r},${r} 0 1,1 ${x},${y-r}" fill="none" stroke="#0b5cad" stroke-width="2.5"/><path d="M${x},${y-r} l9,-5 l-1,10 z" fill="#0b5cad"/><text x="${x-r}" y="${y+r+14}" font-size="10" font-weight="700" fill="#0b5cad">re-entry</text>`)}
+  if(d.af){let s='';for(const [cx,cy] of [[86,74],[104,90],[78,96],[184,58],[200,72],[176,72]])s+=`<path d="M${cx-10},${cy} q3,-6 6,0 t6,0 t6,0" stroke="#0b5cad" stroke-width="1.6" fill="none"/>`;P.push(s+`<text x="130" y="30" font-size="10" font-weight="700" fill="#0b5cad">chaotic atrial wavelets</text>`)}
+  if(d.ap)P.push(`<path d="M228,96 L232,124" stroke="#0b5cad" stroke-width="5" stroke-linecap="round"/><text x="236" y="104" font-size="10" font-weight="700" fill="#0b5cad">accessory</text><text x="236" y="116" font-size="10" font-weight="700" fill="#0b5cad">pathway</text>`);
+  if(d.pace)P.push(`<path d="M102,4 Q94,60 98,112 Q110,180 128,226" stroke="#5c564b" stroke-width="3" fill="none"/><circle cx="128" cy="226" r="5" fill="#0b5cad"/><text x="150" y="256" text-anchor="middle" font-size="10" font-weight="700" fill="#5c564b">pacing lead tip in the RV apex (blue dot)</text>`);
+  if(d.ring)P.push(`<ellipse cx="150" cy="140" rx="132" ry="120" fill="#0b5cad" fill-opacity=".06" stroke="#0b5cad" stroke-dasharray="6 4"/><text x="150" y="16" text-anchor="middle" font-size="10" font-weight="700" fill="#0b5cad">fluid, fat or air between heart and skin</text>`);
+  if(d.repol)P.push(`<text x="150" y="254" text-anchor="middle" font-size="10" font-weight="700" fill="#6b3f86">ventricular repolarization ${d.repol==='long'?'prolonged':'shortened'}</text>`);
+  if(d.vec!=null){// inset: typical mean frontal QRS direction on a small axis circle
+    const cx=30,cy=222,r=22,a=d.vec*Math.PI/180,x2=cx+r*Math.cos(a),y2=cy+r*Math.sin(a);
+    P.push(`<circle cx="${cx}" cy="${cy}" r="${r+4}" fill="#fff" stroke="#c9b98f"/><line x1="${cx-r}" y1="${cy}" x2="${cx+r}" y2="${cy}" stroke="#e2d9c4"/><line x1="${cx}" y1="${cy-r}" x2="${cx}" y2="${cy+r}" stroke="#e2d9c4"/><line x1="${cx}" y1="${cy}" x2="${x2}" y2="${y2}" stroke="#111" stroke-width="2.5"/><circle cx="${x2}" cy="${y2}" r="3.5" fill="#111"/><text x="${cx}" y="${cy-r-8}" text-anchor="middle" font-size="9" font-weight="700" fill="#5c564b">mean QRS</text>`)}
+  return `<svg class="heartsvg" viewBox="0 0 300 262" font-family="Archivo, Arial, sans-serif" role="img" aria-label="Schematic of the heart and conduction system, frontal view">${P.join('')}</svg>`}
+function mechHTML(k){const m=MECH[k];if(!m)return '';
+  return `<div class="why"><div class="whyfig">${heartSVG(m.d)}<p class="whycap">Frontal view, patient\x27s right on the left. Gold: conduction system. Inset: typical direction of the mean QRS (0° points to the patient's left, +90° down).</p></div>
+    <div><h3>Why it looks like this</h3><p>${m.t}</p><p class="whyhint">Turn on <b>Mark findings</b> above the tracing to see these features on this patient.</p></div></div>`}
+
+/* ---------- mark findings on the tracing (from this patient's 12SL measurements) ---------- */
+const ANN={on:false,ops:[],note:''};
+const mmT=v=>(Math.abs(v)*10).toFixed(1);
+function annCell(k){for(let ri=0;ri<3;ri++){const ci=LAYOUT[ri].indexOf(k);if(ci>=0)return {x:X0+ci*62.5,y:ROWY[ri]}}return null}
+function buildAnn(){
+  ANN.ops=[];ANN.note='';if(mode!=='real'||!rec)return;const f=feat(rec),k=curCat,ops=ANN.ops;if(!f)return;
+  const box=(lead,text,col='#866a2e')=>{if(!ops.some(o=>o.t==='box'&&o.lead===lead))ops.push({t:'box',lead,text,col});else{const o=ops.find(o=>o.t==='box'&&o.lead===lead);o.text+=' · '+text}};
+  const brk=(a,b,text,lvl,col='#1d7550')=>ops.push({t:'brk',a,b,text,lvl,col});
+  const mark=(s,text,col='#0b5cad')=>ops.push({t:'mark',s,text,col});
+  const notes=[];
+  // representative conducted beat in the rhythm strip
+  const rrs=rec.r.slice(1).map((v,i)=>v-rec.r[i]).sort((a,b)=>a-b),mrr=rrs[rrs.length>>1]||400;
+  const rep=BI.filter(b=>b.t!=='rvot'&&b.on/FS>1.2&&b.on/FS<7.5);const b=rep[rep.length>>1]||BI.find(x=>x.t!=='rvot')||BI[0];
+  const on=b?b.on:null;
+  const ints=(which)=>{if(on==null)return;let l=0;
+    if(which.includes('pr')&&f.pr)brk(on-f.pr/2,on,`PR ${f.pr} ms`,l++,f.pr>200||f.pr<120?'#b0262f':'#1d7550');
+    if(which.includes('qrs')&&f.qrs)brk(on,on+f.qrs/2,`QRS ${f.qrs} ms`,l++,f.qrs>=120?'#b0262f':'#1d7550');
+    if(which.includes('qt')&&f.qt){const cut=rec.s==='M'?450:460;brk(on,on+f.qt/2,`QT ${f.qt} · QTc ${f.qtc} ms`,l++,f.qtc>cut?'#b0262f':'#1d7550')}};
+  const stOps=()=>{MZL.forEach((L,i)=>{const v=f.ST[i];if(v==null||L==='aVR')return;if(v>=.1)box(L,`ST↑ ${mmT(v)} mm`,'#b0262f');else if(v<=-.1)box(L,`ST↓ ${mmT(v)} mm`,'#0b5cad')})};
+  const qOps=()=>{MZL.forEach((L,i)=>{if(L==='aVR')return;const d=f.QD[i],a=f.QA[i],R=f.R[i]||0;if(d>=40||(a>=.1&&a>=.25*Math.max(R,.1)&&d>=30))box(L,R<.1?`QS ${d} ms`:`Q ${d} ms, ${mmT(a)} mm`,'#6b3f86')})};
+  const tOps=()=>{if(!f.TA)return;MZL.forEach((L,i)=>{if(L==='aVR'||L==='V1')return;const v=f.TA[i];if(v!=null&&v<=-.1&&!(L==='III'&&(f.TA[5]??0)>-.1))box(L,`T inverted ${mmT(v)} mm`,'#0b5cad')})};
+  const axisOps=()=>{const n=i=>(f.R[i]||0)-(f.S[i]||0);box('I',`net QRS ${n(0)>=0?'+':'−'}${mmT(n(0))} mm`,'#866a2e');box('aVF',`net QRS ${n(5)>=0?'+':'−'}${mmT(n(5))} mm`,'#866a2e');notes.push(`Axis ${rec.ax}°`)};
+  const rrOps=(all)=>{const r=rec.r;for(let i=1;i<r.length;i++){const d=r[i]-r[i-1];if(all||d<.85*mrr)mark((r[i]+r[i-1])/2,`${d*2}`,d<.85*mrr?'#b0262f':'#5c564b')}};
+  const early=()=>{const r=rec.r;for(let i=1;i<r.length;i++){const d=r[i]-r[i-1],nx=i<r.length-1?r[i+1]-r[i]:null,bb=BI.find(x=>x.R===r[i]);if(d<.85*mrr||(nx&&d<.8*nx))mark(r[i],bb&&bb.t==='rvot'?'early, wide':'early','#b0262f')}};
+  const pDots=()=>{for(const p of rec.p)mark(p,'P','#6b3f86')};
+  switch(k){
+    case 'normal':{ints(['pr','qrs','qt']);const ok=(f.pr==null||f.pr>=120&&f.pr<=200)&&f.qrs<120&&f.qtc<=(rec.s==='M'?450:460);notes.push(ok?'Intervals within normal limits':'Normal per the cardiologists; check the red interval against the cutoff');break}
+    case 'sbrad':case 'stach':ints(['pr','qrs']);if(rec.r.length>2)brk(rec.r[1],rec.r[2],`R–R ${(rec.r[2]-rec.r[1])*2} ms → ${rec.hr} bpm`,2,'#0b5cad');break;
+    case 'sarrh':rrOps(true);notes.push('R–R in ms: cycles smoothly');break;
+    case 'afib':rrOps(true);notes.push('No P waves · R–R irregularly irregular');break;
+    case 'aflt':['II','III','aVF'].forEach(L=>box(L,'sawtooth F waves','#0b5cad'));if(f.ha)notes.push(`Atrial rate ≈ ${f.ha}/min, ventricular ${rec.hr}`);break;
+    case 'svt':ints(['qrs']);if(rec.r.length>2)brk(rec.r[1],rec.r[2],`R–R ${(rec.r[2]-rec.r[1])*2} ms → ${rec.hr} bpm`,1,'#0b5cad');notes.push('P hidden in or just after the QRS');break;
+    case 'pac':case 'pvc':case 'bigu':early();ints(['qrs']);break;
+    case 'pace':ints(['qrs']);box('V1','wide, LBBB-like','#866a2e');notes.push('Look for pacing spikes before each QRS');break;
+    case 'avb1':ints(['pr','qrs']);pDots();break;
+    case 'avb2':case 'avb3':{pDots();if(rec.r.length>2){const i=rec.r.length>>1;brk(rec.r[i-1],rec.r[i],`R–R ${(rec.r[i]-rec.r[i-1])*2} ms (ventricles ${rec.hr}/min)`,1,'#0b5cad')}
+      notes.push((k==='avb2'?'Some P waves are not followed by a QRS':'P waves and QRS complexes march independently; the PR varies')+(f.ha&&f.ha>rec.hr+5?` · atrial rate ≈ ${f.ha}/min`:''));break}
+    case 'lafb':case 'lpfb':axisOps();box(k==='lafb'?'II':'I',k==='lafb'?'rS':'rS','#866a2e');break;
+    case 'irbbb':ints(['qrs']);box('V1','rSR′','#866a2e');break;
+    case 'rbbb':ints(['qrs']);box('V1','rsR′ (late R′)','#866a2e');box('I','slurred S','#866a2e');box('V6','slurred S','#866a2e');stOps();break;
+    case 'lbbb':ints(['qrs']);box('V1','deep S / QS','#866a2e');box('V6','broad notched R, no q','#866a2e');stOps();break;
+    case 'bifasc':ints(['qrs']);box('V1','RBBB: late R′','#866a2e');axisOps();break;
+    case 'wpw':ints(['pr','qrs']);if(on!=null)mark(on,'delta wave','#b0262f');break;
+    case 'ivcd':ints(['qrs']);break;
+    case 'inf_acute':case 'ant_acute':case 'lat_mi':case 'isc':stOps();qOps();tOps();break;
+    case 'post_mi':box('V1',`R ${mmT(f.R[6])} / S ${mmT(f.S[6])} mm`,'#866a2e');box('V2',`R ${mmT(f.R[7])} / S ${mmT(f.S[7])} mm`,'#866a2e');stOps();qOps();break;
+    case 'inf_old':case 'ant_old':qOps();stOps();tOps();break;
+    case 'lvh':{const v5=f.R[10]>=f.R[11];box('V1',`S ${mmT(f.S[6])} mm`,'#b0262f');box(v5?'V5':'V6',`R ${mmT(v5?f.R[10]:f.R[11])} mm`,'#b0262f');
+      const sok=(f.S[6]+Math.max(f.R[10],f.R[11]))*10,corn=(f.R[4]+f.S[8])*10;const cc=rec.s==='M'?28:20;notes.push(`Sokolow–Lyon ${sok.toFixed(0)} mm ${sok>=35?'✓':'(below 35)'} · Cornell ${corn.toFixed(0)} mm ${corn>cc?'✓':`(not over ${cc})`}`);stOps();tOps();break}
+    case 'rvh':box('V1',`R ${mmT(f.R[6])} / S ${mmT(f.S[6])} mm`,'#b0262f');box('V6',`S ${mmT(f.S[11])} mm`,'#b0262f');axisOps();stOps();tOps();break;
+    case 'lae':if(f.pD!=null)box('II',`P ${f.pD} ms ${f.pD>=120?'✓ ≥120':'(under 120)'}`,'#6b3f86');if(f.pA[1]!=null&&f.pA[1]<0)box('V1',`terminal P ${mmT(f.pA[1])} mm deep ${f.pA[1]<=-.1?'✓':'(under 1 mm)'}`,'#6b3f86');break;
+    case 'rae':if(f.pA[0]!=null)box('II',`P ${mmT(f.pA[0])} mm tall ${f.pA[0]>.25?'✓ >2.5':'(not over 2.5)'}`,'#6b3f86');break;
+    case 'lvolt':{const lim=['I','II','III','aVR','aVL','aVF'],pp=L=>f.PP?f.PP[LI[L]]:(f.R[LI[L]]||0)+(f.S[LI[L]]||0);let n=0;lim.forEach(L=>{const v=pp(L);if(v<.5)n++;box(L,`QRS ${mmT(v)} mm${v<.5?' ✓':''}`,v<.5?'#0b5cad':'#866a2e')});notes.push(`${n} of 6 limb leads under 5 mm peak to peak`);break}
+    case 'lqt':ints(['qt']);break;
+    case 'dig':stOps();tOps();ints(['qt']);notes.push('Look for the sagging, scooped ST in the lateral leads');break;
+  }
+  if(!ops.length&&!notes.length)notes.push('No measured finding reaches the usual cutoff on this tracing; compare it with the criteria below');
+  ANN.note=notes.join(' · ');
+}
+function drawAnn(){
+  if(!ANN.on||mode!=='real')return;const c=og,fs=Math.max(10,2.9*mm);c.font=`700 ${fs}px Archivo, Arial, sans-serif`;
+  const tag=(x,y,s,col,al='left')=>{const w=c.measureText(s).width+8,x0=al==='center'?x-w/2:al==='right'?x-w:x;c.fillStyle='rgba(255,255,255,.92)';c.fillRect(x0,y-fs,w,fs+5);c.strokeStyle=col;c.lineWidth=1;c.strokeRect(x0,y-fs,w,fs+5);c.fillStyle=col;c.fillText(s,x0+4,y)};
+  if(hidden()){tag(PW-8,ROWY[3]*mm-12*mm,'Findings appear after you answer','#5c564b','right');return}
+  for(const o of ANN.ops){
+    if(o.t==='box'){const cl=annCell(o.lead);if(!cl)continue;c.strokeStyle=o.col;c.lineWidth=2.5;c.setLineDash([]);c.strokeRect(cl.x*mm+2,(cl.y-15)*mm+2,62.5*mm-4,28*mm-4);tag((cl.x+62.5)*mm-6,(cl.y-10)*mm,o.text,o.col,'right')}
+    else if(o.t==='brk'){const y=(ROWY[3]-6-o.lvl*5)*mm,x0=(X0+o.a/FS*25)*mm,x1=(X0+o.b/FS*25)*mm,yb=(ROWY[3]+3)*mm;c.strokeStyle=o.col;c.lineWidth=1;c.setLineDash([3,3]);c.beginPath();c.moveTo(x0,y);c.lineTo(x0,yb);c.moveTo(x1,y);c.lineTo(x1,yb);c.stroke();c.setLineDash([]);c.lineWidth=2.5;c.beginPath();c.moveTo(x0,y);c.lineTo(x1,y);c.stroke();tag(x1+5,y+fs*.4,o.text,o.col)}
+    else if(o.t==='mark'){const x=(X0+o.s/FS*25)*mm,y=(ROWY[3]-19)*mm;c.fillStyle=o.col;c.beginPath();c.moveTo(x,y+7);c.lineTo(x-5,y);c.lineTo(x+5,y);c.fill();c.font=`700 ${fs*.9}px Archivo, Arial, sans-serif`;c.fillText(o.text,x-c.measureText(o.text).width/2,y-3);c.font=`700 ${fs}px Archivo, Arial, sans-serif`}}
+  if(ANN.note)tag(PW-8,(ROWY[3]+14)*mm,ANN.note,'#111','right');
+}
+function setAnn(on){ANN.on=on;$('annBtn').setAttribute('aria-pressed',on);if(on)buildAnn()}
+$('annBtn').onclick=()=>setAnn(!ANN.on);
+
 /* ---------- card ---------- */
 function dxHTML(r){return `<div><div class="dxh">This patient · cardiologist statements</div><ul class="dxl">${r.dx.map(d=>`<li><code>${d[0]}</code>${d[1]}${d[2]?` · ${d[2]}%`:''}</li>`).join('')}${r.st?`<li><code>STAGE</code>infarct ${STG(r.st)} (I acute → III old)</li>`:''}${r.so?'<li><code>2ND</code>second cardiologist review</li>':''}</ul></div>`}
 function catBody(c){return `<ul class="finds">${c.f.map(x=>`<li><b>${x[0]}</b><span>${x[1]}</span></li>`).join('')}</ul>
-  <div class="two"><div><h3>What to look for</h3><p>${c.look}</p></div><div><h3>Clinical</h3><p>${c.clin}</p></div></div>`}
+  <div class="two"><div><h3>What to look for</h3><p>${c.look}</p></div><div><h3>Clinical</h3><p>${c.clin}</p></div></div>${mechHTML(Object.keys(CATS).find(k=>CATS[k]===c))}`}
 function renderCard(){
   if(mode==='real'){const c=CATS[curCat];
     $('card').innerHTML=`<div><div class="eyebrow">${c.g} · patient ${recIdx%byCat[curCat].length+1} of ${byCat[curCat].length}</div><h2>${c.n}</h2></div>${catBody(c)}${dxHTML(rec)}`}
