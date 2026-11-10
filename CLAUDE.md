@@ -10,9 +10,20 @@ Originally built as a claude.ai artifact (https://claude.ai/code/artifact/2ec6df
 - `data/<category>.json` — tracings for each pattern category (normal, afib, lbbb, wpw, …), fetched on demand as `data/${r.c}.json`.
 - `data/heart.json` — simplified Z-Anatomy / BodyParts3D heart mesh (~60k triangles).
 
-## Guided read
+## Measurements (PTB-XL+)
 
-Beside the quick quiz (`Quiz me`) there is a `Guided read` mode (`setQuiz`, `GS`, `renderGuide` in `index.html`): seven committed steps (rate, rhythm, axis, intervals, hypertrophy, ischemia, diagnosis), each graded. Rate and axis are graded against the manifest (`hr`, `ax`) and hidden until committed; rhythm, chambers and ischemia against `dx` codes, `st`, `am` and the category. PTB-XL has no interval labels, so `measureIntervals()` estimates PR/QRS/QT from a median beat of the VCG: QRS is dependable, PR and QT are approximate, so intervals are graded by class with leniency and the number is only quoted when it agrees with the labels. Per-step tallies persist in `localStorage` (`tlvl.guided.v1`).
+- `data/features.json` — per record (keyed by ecg_id) GE 12SL values from PTB-XL+ v1.0.1: `pr`, `qrs`, `qt`, `qtc` (ms), `pax`/`tax` (P/T frontal axes), `ha` (atrial rate), `R`/`S`/`ST` (mV, 12 leads in app order I…V6, S as a positive depth), `pA` (P amp in II, P' amp in V1), `pD` (P duration II), `f` (P on, P off, QRS on, QRS off, T end in ms into the median beat). Loaded at boot (`FEAT`, `feat(r)`).
+- `data/medians.json` — 12SL median beats, base64 Int16 µV, 12 leads × 600 samples at 500 Hz, lead-major. Loaded on first use of the median-beat panel. Two records (21605, 21111) have no median in PTB-XL+. Note: the PTB-XL+ WFDB headers say mV, but after gain/baseline the values are µV.
+- The manifest `hr` is the 12SL ventricular rate. For 16 records the original R-peak list (`r`) counted P or T waves (e.g. every complete heart block); those lists were re-detected from the VCG and checked against the 12SL rate.
+- The 12SL QRS axis column is empty in PTB-XL+, so the manifest `ax` is still used.
+
+## Quiz modes
+
+All three open in a focus view (`body.focus`: tracing + question, everything else hidden, View Transitions animation, reduced-motion respected) via `setQuiz(mode)`:
+- `quick` — pick the diagnosis from four.
+- `guided` — seven committed steps (`GS`, `renderGuide`). Rate, PR/QRS/QT and Sokolow–Lyon voltage graded against 12SL (20 ms PR/QRS, 40 ms QT, 4 mm or 15% voltage); rhythm, chambers, ischemia against the cardiologist statements; values hidden in the header until their step is committed (`gHide`).
+- `vector` — alternating drills (`startDrill`, `renderDrill`): *aim* sets the frontal axis on a hexaxial dial (within 20° of `ax`, 3D view hidden); *predict* hides the tracing (`setVeil`), freezes the 3D vector at peak QRS and grades predicted net QRS per lead against 12SL R − S.
+Per-step tallies (including `aim`, `predict`) persist in `localStorage` (`tlvl.guided.v1`).
 
 ## Running locally
 
