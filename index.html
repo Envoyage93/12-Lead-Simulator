@@ -182,39 +182,28 @@ fieldset:disabled .chips{opacity:.45} fieldset:disabled .chip{cursor:not-allowed
 #mzc{display:block;width:100%;cursor:crosshair;border-radius:6px;touch-action:manipulation}
 .mznote{margin:0;font-size:13px;color:var(--muted)}
 .mznote:empty{display:none}
-/* hidden tracing for the predict drill */
-.veil{background:var(--paper);display:grid;min-height:140px;place-content:center;gap:6px;text-align:center;padding:16px;border-bottom:1px solid var(--line)}
-.veil[hidden]{display:none}
-.veil b{font-family:var(--f-display);font-weight:800;font-size:20px;color:var(--ink)}
-.veil span{color:var(--muted);max-width:44ch;font-size:15px}
 /* focus view: quiz modes show only the tracing and the question */
 body.focus .mast .mrow p,body.focus .tabs,body.focus .controls,body.focus .sources,body.focus .hint,body.focus .inspect{display:none}
 body.focus .lab{display:none}
-body.focus.vfocus .lab{display:grid;grid-template-columns:1fr}
 body.focus .mast .in{padding-block:12px 12px}
 body.focus .mast h1{font-size:clamp(22px,3vw,30px)}
 @media (min-width:1100px){
   body.focus .wrap{max-width:1500px;grid-template-columns:minmax(0,1fr) minmax(340px,420px);align-items:start}
-  body.focus .sheet,body.focus .lab{grid-column:1}
-  body.focus .card{grid-column:2;grid-row:1 / span 2;position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}}
+  body.focus .sheet{grid-column:1}
+  body.focus .card{grid-column:2;position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}}
 body.focus .card h2{font-size:24px}
 .qexit{background:none;border:1px solid var(--line);border-radius:8px;padding:5px 10px;font-family:var(--f-display);font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .qexit:hover{border-color:var(--gold);color:var(--ink)}
 .sheet{view-transition-name:sheet}.card{view-transition-name:qcard}
 ::view-transition-group(*){animation-duration:.42s;animation-timing-function:cubic-bezier(.2,.7,.2,1)}
 @media (prefers-reduced-motion:reduce){::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none}}
-/* vector drills */
+/* axis drill */
 .dial{width:min(100%,300px);aspect-ratio:1;display:block;touch-action:none;cursor:pointer;user-select:none}
 .dial:focus-visible{outline:2px solid var(--dgold);outline-offset:4px;border-radius:50%}
 .dialrow{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center}
 .dialread{font-family:var(--f-display);font-weight:800;font-size:28px;color:var(--ink);font-variant-numeric:tabular-nums}
 .dialread small{display:block;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
-.pcell{display:grid;gap:6px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--sunk)}
-.pcell.ok{background:var(--goodbg);border-color:var(--good)} .pcell.no{background:#f8e3e4;border-color:var(--bad)}
-.pcell b{font-family:var(--f-display);font-size:15px;color:var(--ink)}
-.pcell .seg button{padding:6px 4px;font-size:15px;letter-spacing:0;text-transform:none}
-.pcell small{font-size:12px;color:var(--muted)}
+
 .sources{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 20px;display:grid;gap:8px;font-size:14px}
 .sources p{margin:0;max-width:95ch}
 .sources b{font-family:var(--f-display);font-weight:700;color:var(--ink)}
@@ -245,7 +234,7 @@ body.focus .card h2{font-size:24px}
     <div class="paperwrap" id="paperwrap"><div class="paperbox" id="paperbox">
       <canvas id="paper"></canvas><canvas id="overlay" aria-label="12-lead tracing; tap a lead to inspect it"></canvas>
       <div class="loading" id="loading" hidden>Loading tracing</div>
-    </div><div class="veil" id="veil" hidden><b>Tracing hidden</b><span>Predict each lead from the heart vector, then commit to see the real tracing.</span></div></div>
+    </div></div>
     <div class="medzoom" id="medzoom" hidden>
       <div class="mzhead"><span class="eyebrow">Median beat · lead <b id="mzLead">II</b></span><span class="mzspec">50 mm/s · 20 mm/mV · GE 12SL</span>
         <span class="calread dim" id="mzRead">Tap two points on the beat to measure.</span>
@@ -292,7 +281,7 @@ body.focus .card h2{font-size:24px}
       </div>
       <div class="seg" role="group" aria-label="Playback speed"><button id="sp1" aria-pressed="false">Real time</button><button id="sp4" aria-pressed="true">¼ speed</button><button id="sp0" aria-pressed="false">Pause</button></div>
       <div class="seg"><button class="btn" id="another">Another patient</button><button class="btn quiz" id="quiz" aria-pressed="false">Quiz me</button></div>
-      <div class="seg"><button class="btn quiz" id="guide" aria-pressed="false">Guided read</button><button class="btn quiz" id="vec" aria-pressed="false">Vector drill</button></div>
+      <div class="seg"><button class="btn quiz" id="guide" aria-pressed="false">Guided read</button><button class="btn quiz" id="vec" aria-pressed="false">Axis drill</button></div>
     </div>
   </section>
 
@@ -306,7 +295,7 @@ body.focus .card h2{font-size:24px}
     <p><b>Activation animation.</b> The order in which muscle activates is a template from human isolated-heart mapping (Durrer D et al. <i>Circulation</i> 1970;41:899–912), with variants for bundle branch blocks, fascicular blocks, pre-excitation (left lateral pathway assumed), RV pacing and wide ectopic beats. Its timing is driven by the tracing itself: ventricles depolarize as this patient's QRS energy accumulates and recover across their T wave; atria fire on P waves detected from the record. It shows the sequence, not a patient-specific activation map.</p>
     <p><b>Wiggers and PV loop.</b> A lumped time-varying elastance model of both ventricles, left atrium, systemic and pulmonary circulations (Suga–Sagawa elastance; three-element Windkessel aorta), integrated at 0.5 ms. Ventricular contraction starts 40 ms after this patient's QRS onset and relaxation ends with their T wave; the atria contract on their detected P waves (none in AF or flutter). PTB-XL contains no pressures, so every pressure and volume shown is simulated; conditions are teaching presets, not this patient's physiology.</p>
     <p><b>Measurements.</b> Ventricular rate, PR, QRS, QT/QTc, per-lead R, S and ST amplitudes, P and T axes, fiducial points and the magnified median beats are GE Marquette 12SL output published in PTB-XL+ v1.0.1 (Strodthoff N et al. <i>Sci Data</i> 2023, doi:10.1038/s41597-023-02153-8), via PhysioNet, CC BY 4.0. Beat positions were checked against the 12SL ventricular rate and re-detected from the vector where they disagreed. The QRS axis is the record's computed frontal axis.</p>
-    <p><b>Guided read and vector drills.</b> Rate, intervals and voltage are graded against 12SL within stated tolerances (20 ms for PR and QRS, 40 ms for QT); rhythm, chamber enlargement and ischemia against the cardiologist statements. The axis drill is graded within 20° of the record's axis; the lead-prediction drill against each lead's net QRS (R minus S) from 12SL.</p>
+    <p><b>Guided read and axis drill.</b> Rate, intervals and voltage are graded against 12SL within stated tolerances (20 ms for PR and QRS, 40 ms for QT); rhythm, chamber enlargement and ischemia against the cardiologist statements. The axis drill is graded within 20° of the record's axis.</p>
     <p><b>Not for clinical use.</b> Teaching material. Interval measurements are left to the calipers on purpose.</p>
   </section>
 </div>
@@ -963,10 +952,9 @@ function setQuiz(m){// 'quick' | 'guided' | 'vector' | null (exit)
   const was=quiz.on;
   withTransition(()=>{
     quiz.on=!!m;quiz.mode=m||'quick';
-    [['quiz','quick','Quiz me'],['guide','guided','Guided read'],['vec','vector','Vector drill']].forEach(([id,k,t])=>{$(id).setAttribute('aria-pressed',m===k);$(id).textContent=m===k?'Exit':t});
-    $('picker').disabled=quiz.on;document.body.classList.toggle('focus',quiz.on);document.body.classList.toggle('vfocus',m==='vector');
-    if(m!=='vector')endDrillView();
-    if(quiz.on){quiz.score=0;quiz.n=0;V.kind=null;nextCase()}else{quiz.answered=true;markChips();renderHead();renderCard()}
+    [['quiz','quick','Quiz me'],['guide','guided','Guided read'],['vec','vector','Axis drill']].forEach(([id,k,t])=>{$(id).setAttribute('aria-pressed',m===k);$(id).textContent=m===k?'Exit':t});
+    $('picker').disabled=quiz.on;document.body.classList.toggle('focus',quiz.on);
+    if(quiz.on){quiz.score=0;quiz.n=0;nextCase()}else{quiz.answered=true;markChips();renderHead();renderCard()}
     sizeThree();paperLayout();
   });
   if(quiz.on!==was||m)window.scrollTo({top:0,behavior:'auto'});
@@ -984,7 +972,7 @@ const G={step:0,ans:{},res:{}};
 let tally={};try{tally=JSON.parse(localStorage.getItem('tlvl.guided.v1'))||{}}catch(e){tally={}}
 const saveTally=()=>{try{localStorage.setItem('tlvl.guided.v1',JSON.stringify(tally))}catch(e){}};
 // What the header and vector readout keep hidden: guided read hides each value until its step is committed;
-// vector drills hide the axis until the drill is answered.
+// the axis drill hides the axis until it is answered.
 function gHide(k){if(!quiz.on||quiz.answered)return false;if(quiz.mode==='guided')return !G.res[k];if(quiz.mode==='vector')return k==='axis';return false}
 const codesOf=r=>new Set(r.dx.map(d=>d[0]));
 const LI={I:0,II:1,III:2,aVR:3,aVL:4,aVF:5,V1:6,V2:7,V3:8,V4:9,V5:10,V6:11};
@@ -1136,29 +1124,12 @@ function renderGuide(){
   bindExit();drawMed();
 }
 
-/* ---------- vector drills: reason from the heart vector to the leads and back ---------- */
-// aim: read the limb leads, set the frontal QRS axis on a hexaxial dial (graded against the record's axis).
-// predict: tracing hidden, 3D vector loop frozen at peak QRS; predict each lead's net QRS (graded against 12SL R and S amplitudes).
-const V={kind:null,ang:null,pol:{},res:null};
+/* ---------- axis drill: read the six limb leads, set the frontal QRS axis on a hexaxial dial ---------- */
+// Graded within 20° of the record's axis. The 3D heart stays hidden (focus view), since it would show the answer.
+const V={ang:null,res:null};
 const HEX=[['I',0],['II',60],['III',120],['aVF',90],['aVL',-30],['aVR',-150]];
-const PLEADS=['I','II','III','aVR','aVL','aVF','V1','V2','V4','V6'];
 const angDiff=(a,b)=>{let d=((a-b)%360+540)%360-180;return Math.abs(d)};
-function netPol(k){const f=feat(rec);if(!f)return null;const R=f.R[LI[k]]||0,S=f.S[LI[k]]||0,net=R-S,tot=R+S;if(tot<.05)return {main:'equal',acc:['equal'],R,S};
-  const x=net/tot;return {main:x>.3?'up':x<-.3?'down':'equal',acc:x>.45?['up']:x<-.45?['down']:x>.15?['up','equal']:x<-.15?['down','equal']:['equal'],R,S}}
-function setVeil(on){$('veil').hidden=!on;$('paperbox').hidden=on;if(!on)requestAnimationFrame(paperLayout)}
-function endDrillView(){setVeil(false);const st=document.querySelector('.stage');if(st)st.hidden=false;if(speed===0&&V.froze){setSpeed('sp4',.25);V.froze=false}}
-function freezePeak(){// park the cursor on the largest QRS vector of the first normally conducted beat
-  const b=BI.find(x=>x.t!=='rvot')||BI[0];if(!b)return;let im=b.on,mx=0;for(let i=b.on;i<=b.off;i++){const m=Math.hypot(H[i*3],H[i*3+1],H[i*3+2]);if(m>mx){mx=m;im=i}}
-  setSpeed('sp0',0);V.froze=true;tau=im/FS;if(three)three.loopBeat=-1}
-function startDrill(){
-  V.kind=V.kind==='aim'?'predict':'aim';V.ang=null;V.pol={};V.res=null;
-  if(V.kind==='predict'&&!feat(rec))V.kind='aim';
-  if(V.kind==='predict'){setHview('three');setView('front');freezePeak()}else endDrillView();
-  // the aim drill hides the 3D heart (it would show the axis); predict hides the tracing instead
-  setVeil(V.kind==='predict');document.querySelector('.stage').hidden=V.kind!=='predict';
-  document.body.classList.toggle('vfocus',V.kind==='predict');
-  renderHead();renderDrill();sizeThree();
-}
+function startDrill(){V.ang=null;V.res=null;renderHead();renderDrill()}
 const DR=120,DC=150,dpt=(a,r)=>[DC+r*Math.cos(a*Math.PI/180),DC+r*Math.sin(a*Math.PI/180)];
 function dialArrow(a,col,w){const [x,y]=dpt(a,DR-6);return `<line x1="${DC}" y1="${DC}" x2="${x}" y2="${y}" stroke="${col}" stroke-width="${w}" stroke-linecap="round"/><circle cx="${x}" cy="${y}" r="${w+2}" fill="${col}"/>`}
 function dialSVG(){const R=DR,c=DC,pt=dpt;
@@ -1173,10 +1144,10 @@ function dialSVG(){const R=DR,c=DC,pt=dpt;
   return s+`<circle cx="${c}" cy="${c}" r="4" fill="var(--ink)"/></svg>`}
 function renderDrill(){
   const card=$('card'),f=feat(rec),dt=tally;
-  const head=(t,sub)=>`<div class="qhead"><div><div class="eyebrow">Vector drill · ${V.kind==='aim'?'aim the axis':'predict the leads'} · patient ${quiz.n+(quiz.answered?0:1)}</div><h2>${t}</h2>${sub?`<p>${sub}</p>`:''}</div><div class="score">Score <b>${quiz.score}</b> / ${quiz.n} ${exitBtn()}</div></div>`;
-  const tl=['aim','predict'].filter(k=>dt[k]&&dt[k][1]).map(k=>`<span>${k==='aim'?'Aim':'Predict'} <b>${dt[k][0]}/${dt[k][1]}</b></span>`).join('');
+  const head=(t,sub)=>`<div class="qhead"><div><div class="eyebrow">Axis drill · patient ${quiz.n+(quiz.answered?0:1)}</div><h2>${t}</h2>${sub?`<p>${sub}</p>`:''}</div><div class="score">Score <b>${quiz.score}</b> / ${quiz.n} ${exitBtn()}</div></div>`;
+  const tl=dt.aim&&dt.aim[1]?`<span>Axis <b>${dt.aim[0]}/${dt.aim[1]}</b></span>`:'';
   const tallyBox=tl?`<div class="gtally"><span class="dxh">Drills so far</span>${tl}</div>`:'';
-  if(V.kind==='aim'){
+  {
     const sub='Read the six limb leads (I, II, III, aVR, aVL, aVF). The axis points toward the lead with the most positive QRS and runs perpendicular to the most nearly isoelectric one. Tap or drag on the dial, or use the arrow keys.';
     if(!V.res){card.innerHTML=`${head('Set the frontal QRS axis',sub)}<div class="dialrow">${dialSVG()}<div class="dialread" id="dialRead">${V.ang==null?'—':V.ang+'°'}<small>your axis</small></div></div>
       <p class="gmsg" id="gMsg" hidden>Set the axis on the dial first.</p><button class="next" id="gCommit">Commit</button>${tallyBox}`;
@@ -1198,20 +1169,6 @@ function renderDrill(){
         <ul class="finds gres"><li class="na"><b>Most positive</b><span>${hi?`${hi[0]} (net ${mmv(hi[1])}). `:''}The lead axis nearest ${rec.ax}° is ${near[0]} (${near[1]}°).</span></li>
         <li class="na"><b>Most isoelectric</b><span>${lo?`${lo[0]} (net ${mmv(lo[1])}). `:''}The lead perpendicular to the axis is ${perp[0]} (${perp[1]}°).</span></li></ul>
         <p class="gtip">${axisWord(rec.ax)} ${CATS[curCat].n}.</p><button class="next" id="gNext">Next patient</button>${tallyBox}`;
-      $('gNext').onclick=nextCase;
-    }
-  }else{
-    const sub='The tracing is hidden. The arrow is the heart vector at the peak of the QRS, and the coloured loop is the whole beat. For each lead, will the QRS be mostly upright, about equal, or mostly downward? Switch the 3D view to Horizontal for the chest leads.';
-    const cell=k=>{const r=V.res&&V.res[k];return `<div class="pcell ${r?(r.ok?'ok':'no'):''}"><b>${k}</b><div class="seg" role="group" aria-label="${k}">${[['up','▲'],['equal','◆'],['down','▼']].map(([v,s])=>`<button type="button" data-k="${k}" data-v="${v}" aria-pressed="${V.pol[k]===v}" aria-label="${k} ${v==='up'?'upright':v==='down'?'downward':'about equal'}"${V.res?' disabled':''}>${s}</button>`).join('')}</div>${r?`<small>Real: ${r.main==='up'?'upright':r.main==='down'?'downward':'about equal'} · R ${mmv(r.R)}, S ${mmv(r.S)}</small>`:''}</div>`};
-    if(!V.res){card.innerHTML=`${head('Predict the twelve-lead from the vector',sub)}<div class="pgrid">${PLEADS.map(cell).join('')}</div><p class="gmsg" id="gMsg" hidden>Choose an answer for every lead.</p><button class="next" id="gCommit">Commit</button>${tallyBox}`;
-      card.querySelectorAll('.pcell button').forEach(b=>b.onclick=()=>{V.pol[b.dataset.k]=b.dataset.v;card.querySelectorAll(`.pcell button[data-k="${b.dataset.k}"]`).forEach(x=>x.setAttribute('aria-pressed',x.dataset.v===b.dataset.v))});
-      $('gCommit').onclick=()=>{if(PLEADS.some(k=>!V.pol[k])){$('gMsg').hidden=false;return}
-        V.res={};let n=0;for(const k of PLEADS){const t=netPol(k);V.res[k]={...t,ok:t.acc.includes(V.pol[k])};if(V.res[k].ok)n++}
-        V.res.n=n;const ok=n>=8;quiz.answered=true;quiz.n++;if(ok)quiz.score++;const t=tally.predict=tally.predict||[0,0];t[1]++;if(ok)t[0]++;saveTally();
-        setVeil(false);renderHead();renderDrill()};
-    }else{
-      card.innerHTML=`${head('Predict the twelve-lead from the vector')}<p class="verdict ${V.res.n>=8?'ok':'no'}">${V.res.n} of ${PLEADS.length} leads right.</p><div class="pgrid">${PLEADS.map(cell).join('')}</div>
-        <p class="gtip">A lead records upright when the vector points toward its positive pole, so its net QRS follows the projection of the whole loop, not just the peak. The real tracing is shown above; the frontal axis is ${rec.ax}°. ${CATS[curCat].n}.</p><button class="next" id="gNext">Next patient</button>${tallyBox}`;
       $('gNext').onclick=nextCase;
     }
   }

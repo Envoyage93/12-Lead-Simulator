@@ -22,8 +22,8 @@ Originally built as a claude.ai artifact (https://claude.ai/code/artifact/2ec6df
 All three open in a focus view (`body.focus`: tracing + question, everything else hidden, View Transitions animation, reduced-motion respected) via `setQuiz(mode)`:
 - `quick` — pick the diagnosis from four.
 - `guided` — seven committed steps (`GS`, `renderGuide`). Rate, PR/QRS/QT and Sokolow–Lyon voltage graded against 12SL (20 ms PR/QRS, 40 ms QT, 4 mm or 15% voltage); rhythm, chambers, ischemia against the cardiologist statements; values hidden in the header until their step is committed (`gHide`).
-- `vector` — alternating drills (`startDrill`, `renderDrill`): *aim* sets the frontal axis on a hexaxial dial (within 20° of `ax`, 3D view hidden); *predict* hides the tracing (`setVeil`), freezes the 3D vector at peak QRS and grades predicted net QRS per lead against 12SL R − S.
-Per-step tallies (including `aim`, `predict`) persist in `localStorage` (`tlvl.guided.v1`).
+- `vector` (button "Axis drill") — read the limb leads and set the frontal axis on a hexaxial dial (`startDrill`, `renderDrill`), graded within 20° of `ax`. The 3D heart stays hidden in the focus view since it would show the answer.
+Per-step tallies (including `aim`) persist in `localStorage` (`tlvl.guided.v1`).
 
 ## Running locally
 
