@@ -15,7 +15,8 @@ Originally built as a claude.ai artifact (https://claude.ai/code/artifact/2ec6df
 - `data/features.json` — per record (keyed by ecg_id) GE 12SL values from PTB-XL+ v1.0.1: `pr`, `qrs`, `qt`, `qtc` (ms), `pax`/`tax` (P/T frontal axes), `ha` (atrial rate), `R`/`S`/`ST` (mV, 12 leads in app order I…V6, S as a positive depth), `pA` (P amp in II, P' amp in V1), `pD` (P duration II), `f` (P on, P off, QRS on, QRS off, T end in ms into the median beat). Loaded at boot (`FEAT`, `feat(r)`).
 - `data/medians.json` — 12SL median beats, base64 Int16 µV, 12 leads × 600 samples at 500 Hz, lead-major. Loaded on first use of the median-beat panel. Two records (21605, 21111) have no median in PTB-XL+. Note: the PTB-XL+ WFDB headers say mV, but after gain/baseline the values are µV.
 - The manifest `hr` is the 12SL ventricular rate. For 16 records the original R-peak list (`r`) counted P or T waves (e.g. every complete heart block); those lists were re-detected from the VCG and checked against the 12SL rate.
-- The 12SL QRS axis column is empty in PTB-XL+, so the manifest `ax` is still used.
+- The 12SL QRS axis column is empty in PTB-XL+, so the manifest `ax` is computed as atan2(QRS_Area_aVF, QRS_Area_I) from the 12SL features (the original stored axes disagreed by more than 30° in 21 records). With it, three LAFB records (4444, 16678, 14123) measure −32° to −37°, short of the −45° LAFB criterion.
+- Beat lists were audited against an independent detector (2026-11-10): non-QRS beats removed, missed beats added, 6685 and 8177 re-detected (their old lists sat on P waves, now used as their P lists), stale P lists rebuilt. Audit report: ecg-audit.md in the session folder.
 
 ## Quiz modes
 
