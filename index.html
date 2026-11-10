@@ -147,6 +147,31 @@ fieldset:disabled .chips{opacity:.45} fieldset:disabled .chip{cursor:not-allowed
 .verdict{font-family:var(--f-display);font-weight:800;font-size:22px;margin:0}
 .verdict.ok{color:var(--good)} .verdict.no{color:var(--bad)}
 .next{justify-self:start;background:var(--black);color:var(--gold);border:0;border-radius:8px;padding:10px 18px;font-family:var(--f-display);font-weight:800;font-size:15px;letter-spacing:.08em;text-transform:uppercase}
+.gprog{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none;font-family:var(--f-display);font-weight:700;font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.gprog li{padding:4px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted);background:var(--sunk)}
+.gprog li.cur{background:var(--black);border-color:var(--black);color:var(--gold)}
+.gprog li.ok{background:var(--goodbg);border-color:var(--good);color:var(--good)}
+.gprog li.no{background:#f8e3e4;border-color:var(--bad);color:var(--bad)}
+.gq{display:grid;gap:6px}
+.gopts{display:flex;flex-wrap:wrap;gap:8px}
+.gch{background:var(--sunk);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-family:var(--f-display);font-weight:600;font-size:15px;color:var(--ink);text-align:left}
+.gch:hover{border-color:var(--gold)}
+.gch[aria-pressed="true"]{background:var(--black);border-color:var(--black);color:var(--gold)}
+.gfield{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
+.gfield label{font-family:var(--f-display);font-weight:700;font-size:14px;color:var(--black);min-width:9.5em}
+.gfield input{width:6.5em;font:inherit;font-family:var(--f-mono);padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
+.gfield input:focus-visible,.gch:focus-visible{outline:2px solid var(--dgold);outline-offset:2px}
+.gfield>span{color:var(--muted);font-size:14px}
+@media (max-width:560px){.gfield label{min-width:100%}}
+.gtip{margin:0;color:var(--muted);font-size:15px;max-width:70ch}
+.gmsg{margin:0;color:var(--bad);font-weight:600;font-size:14px}
+.gres li.ok{background:var(--goodbg)} .gres li.no{background:#f8e3e4} .gres li.na{background:var(--sunk)}
+.gres li.ok b{color:var(--good)} .gres li.no b{color:var(--bad)}
+.gtally{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;font-size:13px;font-family:var(--f-display);color:var(--muted)}
+.gtally span:not(.dxh){border:1px solid var(--line);border-radius:6px;padding:3px 8px;background:var(--sunk)}
+.gtally .dxh{margin:0 4px 0 0}
+.gtally b{color:var(--ink)} .gtally .weak{border-color:var(--bad);background:#f8e3e4}
+.glink{background:none;border:0;padding:0;color:var(--dgold);text-decoration:underline;font-size:13px}
 .sources{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 20px;display:grid;gap:8px;font-size:14px}
 .sources p{margin:0;max-width:95ch}
 .sources b{font-family:var(--f-display);font-weight:700;color:var(--ink)}
@@ -216,6 +241,7 @@ fieldset:disabled .chips{opacity:.45} fieldset:disabled .chip{cursor:not-allowed
       </div>
       <div class="seg" role="group" aria-label="Playback speed"><button id="sp1" aria-pressed="false">Real time</button><button id="sp4" aria-pressed="true">¼ speed</button><button id="sp0" aria-pressed="false">Pause</button></div>
       <div class="seg"><button class="btn" id="another">Another patient</button><button class="btn quiz" id="quiz" aria-pressed="false">Quiz me</button></div>
+      <div class="seg"><button class="btn quiz" id="guide" aria-pressed="false">Guided read</button></div>
     </div>
   </section>
 
@@ -228,6 +254,7 @@ fieldset:disabled .chips{opacity:.45} fieldset:disabled .chip{cursor:not-allowed
     <p><b>Heart model.</b> Adult heart with great vessels from Z-Anatomy, built on BodyParts3D (© Database Center for Life Science), CC BY-SA 4.0; simplified to 60,000 triangles for the web and placed in anatomical orientation. The heart vector is drawn from the center of the ventricles.</p>
     <p><b>Activation animation.</b> The order in which muscle activates is a template from human isolated-heart mapping (Durrer D et al. <i>Circulation</i> 1970;41:899–912), with variants for bundle branch blocks, fascicular blocks, pre-excitation (left lateral pathway assumed), RV pacing and wide ectopic beats. Its timing is driven by the tracing itself: ventricles depolarize as this patient's QRS energy accumulates and recover across their T wave; atria fire on P waves detected from the record. It shows the sequence, not a patient-specific activation map.</p>
     <p><b>Wiggers and PV loop.</b> A lumped time-varying elastance model of both ventricles, left atrium, systemic and pulmonary circulations (Suga–Sagawa elastance; three-element Windkessel aorta), integrated at 0.5 ms. Ventricular contraction starts 40 ms after this patient's QRS onset and relaxation ends with their T wave; the atria contract on their detected P waves (none in AF or flutter). PTB-XL contains no pressures, so every pressure and volume shown is simulated; conditions are teaching presets, not this patient's physiology.</p>
+    <p><b>Guided read.</b> Rate and axis are graded against the values shown on the printout; rhythm, hypertrophy and ischemia against the cardiologist statements. PTB-XL has no interval labels, so PR, QRS and QT are graded by class (short, normal, prolonged or wide) from the statements plus an estimate taken from a median beat of the reconstructed vector. That estimate is approximate and is only quoted when it agrees with the statements.</p>
     <p><b>Not for clinical use.</b> Teaching material. Interval measurements are left to the calipers on purpose.</p>
   </section>
 </div>
@@ -563,15 +590,16 @@ function evMM(e){const r=ov.getBoundingClientRect();return [(e.clientX-r.left)/m
 ov.addEventListener('click',e=>{
   const [xm,ym]=evMM(e);
   if(cal.on){if(cal.pts.length>=2)cal.pts=[];cal.pts.push([xm,ym]);
-    if(cal.pts.length===2){const [a,b]=cal.pts,dt=Math.abs(b[0]-a[0])/25*1000,dv=(a[1]-b[1])/10;
+    if(cal.pts.length===2){const [a,b]=cal.pts,dt=Math.abs(b[0]-a[0])/25*1000,dv=(a[1]-b[1])/10;cal.dt=dt;cal.dv=dv;
       $('calRead').className='calread';$('calRead').textContent=`Δt ${Math.round(dt)} ms${dt>200?` · ${Math.round(60000/dt)} bpm if R–R`:''} · ΔV ${dv>=0?'+':''}${dv.toFixed(2)} mV (${Math.abs(dt/40).toFixed(1)} small boxes × ${Math.abs(dv*10).toFixed(1)} mm)`}
     else{$('calRead').className='calread dim';$('calRead').textContent='Tap the second point.'}
     return}
   if(xm<X0)return;if(ym>ROWY[2]+15){setLead('II');return}
   const ri=clamp(Math.floor((ym-5)/30),0,2),ci=clamp(Math.floor((xm-X0)/62.5),0,3);setLead(LAYOUT[ri][ci])});
-$('calBtn').onclick=()=>{cal.on=!cal.on;cal.pts=[];$('calBtn').setAttribute('aria-pressed',cal.on);
+function setCal(on){cal.on=on;cal.pts=[];cal.dt=null;cal.dv=null;$('calBtn').setAttribute('aria-pressed',cal.on);
   $('calRead').className='calread dim';$('calRead').textContent=cal.on?'Tap the first point on the tracing.':'Turn on calipers, then tap two points on the tracing.';
-  ov.style.cursor=cal.on?'crosshair':'pointer'};
+  ov.style.cursor=cal.on?'crosshair':'pointer'}
+$('calBtn').onclick=()=>setCal(!cal.on);
 
 /* ---------- header ---------- */
 const AXL={MID:'normal',LAD:'left',ALAD:'abnormal left',RAD:'right',ARAD:'abnormal right',AXL:'left (unspecified)',AXR:'right (unspecified)',SAG:'sagittal'};
@@ -580,7 +608,7 @@ function renderHead(){
   const el=$('interp');
   if(mode==='real'){
     const r=rec;
-    $('meas').innerHTML=`<span>PTB-XL <b>#${r.id}</b></span><span><b>${r.a??'—'}</b> y · <b>${r.s==='M'?'male':'female'}</b></span><span>Vent rate <b>${r.hr??'—'}</b> bpm <span>(median R–R)</span></span><span>QRS axis <b>${r.ax}°</b> <span>(computed)</span></span>`;
+    $('meas').innerHTML=`<span>PTB-XL <b>#${r.id}</b></span><span><b>${r.a??'—'}</b> y · <b>${r.s==='M'?'male':'female'}</b></span>${gHide('rate')?'<span>Vent rate <span>hidden until you commit</span></span>':`<span>Vent rate <b>${r.hr??'—'}</b> bpm <span>(median R–R)</span></span>`}${gHide('axis')?'<span>QRS axis <span>hidden until you commit</span></span>':`<span>QRS axis <b>${r.ax}°</b> <span>(computed)</span></span>`}`;
     $('spec').textContent='25 mm/s · 10 mm/mV · 0.67–150 Hz';
     if(hidden()){el.className='interp hidden';el.textContent='Cardiologist statements hidden until you answer'}
     else{el.className='interp';el.innerHTML=`${r.dx.filter(d=>d[0]!=='SR'||r.dx.length===1).map(d=>d[1].replace(/^./,c=>c.toUpperCase())).join(' · ')}${r.st?` · infarct ${STG(r.st)}`:''} <span class="src">— cardiologist statements, PTB-XL</span>`}
@@ -662,7 +690,7 @@ function buildLoop(bi){
 function updateThree(){
   if(!L)return;const i=clamp(Math.floor(tau*FS),0,N-1),fx=H[i*3],fy=H[i*3+1],fz=H[i*3+2],mag=Math.hypot(fx,fy,fz);
   const lv=L[sel][i];$('projV').textContent=(lv>=0?'+':'')+lv.toFixed(2);
-  $('vecV').textContent=mag.toFixed(2);$('vecS').textContent=`mV · frontal ${Math.round(Math.atan2(fy,fx)*180/Math.PI)}°`;
+  $('vecV').textContent=mag.toFixed(2);$('vecS').textContent=gHide('axis')?'mV · frontal angle hidden':`mV · frontal ${Math.round(Math.atan2(fy,fx)*180/Math.PI)}°`;
   if(!three)return;
   let bi=0;for(let k=0;k<beatsR.length;k++)if(beatsR[k]-Math.round(.4*FS)<=i)bi=k;if(bi!==three.loopBeat&&beatsR.length)buildLoop(bi);
   const v=T3([fx,fy,fz]),{arrow,SC}=three;
@@ -750,6 +778,7 @@ function markChips(){const k=hidden()?null:(mode==='real'?curCat:curModel);docum
 async function pickReal(k,idx){
   curCat=k;recIdx=idx;markChips();
   try{await loadRec(byCat[k][idx%byCat[k].length])}catch(e){$('loading').textContent='Couldn’t load this tracing. Try another patient.';return}
+  if(mode!=='real')return;// switched to the teaching model while this loaded
   prepBeats(CAT2T[k]||'normal',rec.am||'p',rec.p,rec.am!=='p'||rec.p.length>0);setStageLab();
   if(three)three.loopBeat=-1;drawPaper();renderHead();if(!quiz.on)renderCard();
 }
@@ -785,12 +814,11 @@ function setStageLab(){const note=mode==='real'&&rec&&rec.am==='p'&&!rec.p.lengt
   $('stageLab').innerHTML=(mode==='real'?'Heart vector · this patient<span>Reconstructed from the 12-lead (Kors matrix)':'Heart vector · model<span>Leads generated from this vector (fitted forward matrix)')+note+'</span>'}
 /* ---------- mode tabs ---------- */
 function setMode(m){
-  if(m===mode)return;mode=m;
+  if(m===mode)return;if(quiz.on)toggleQuiz();mode=m;// leave the quiz while still in real mode
   $('tabReal').setAttribute('aria-selected',m==='real');$('tabModel').setAttribute('aria-selected',m==='model');
-  $('hrRow').hidden=m==='real';$('quiz').hidden=m!=='real';$('another').textContent=m==='real'?'Another patient':'New tracing';
+  $('hrRow').hidden=m==='real';$('quiz').hidden=m!=='real';$('guide').hidden=m!=='real';$('another').textContent=m==='real'?'Another patient':'New tracing';
   setStageLab();
   $('mastP').textContent=m==='real'?`${MAN.recs.length} real 12-leads read by cardiologists, each shown with its own 3D heart vector reconstructed from the tracing.`:'A single moving dipole drives all twelve leads. Change the vector, watch every lead respond.';
-  if(quiz.on)toggleQuiz();
   renderPicker();if(m==='real')pickReal(curCat,recIdx);else pickModel(curModel);
 }
 $('tabReal').onclick=()=>setMode('real');$('tabModel').onclick=()=>setMode('model');
@@ -813,8 +841,10 @@ const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()
 async function nextCase(){
   let k;do{k=REALKEYS[Math.floor(Math.random()*REALKEYS.length)]}while(k===curCat&&REALKEYS.length>1);
   const same=shuffle(REALKEYS.filter(x=>x!==k&&CATS[x].g===CATS[k].g)).slice(0,2),rest=shuffle(REALKEYS.filter(x=>x!==k&&!same.includes(x)));
-  quiz.opts=shuffle([k,...same,...rest].slice(0,4));quiz.answered=false;
-  await pickReal(k,Math.floor(Math.random()*byCat[k].length));renderQuiz();
+  quiz.opts=shuffle([k,...same,...rest].slice(0,4));quiz.answered=false;G.step=0;G.ans={};G.res={};
+  await pickReal(k,Math.floor(Math.random()*byCat[k].length));
+  if(!quiz.on||mode!=='real')return;// quiz was exited while the tracing loaded
+  if(quiz.mode==='guided'){G.iv=measureIntervals(H,rec.r,rec.p,rec.am,rec.hr);renderGuide()}else renderQuiz();
 }
 function renderQuiz(pick){
   const c=CATS[curCat];let h=`<div class="qhead"><div><div class="eyebrow">Quiz · real patient ${quiz.n+(quiz.answered?0:1)}</div><h2>Read this 12-lead</h2>
@@ -825,9 +855,199 @@ function renderQuiz(pick){
   $('card').querySelectorAll('.opt').forEach(b=>b.onclick=()=>{quiz.answered=true;quiz.n++;if(b.dataset.k===curCat)quiz.score++;renderHead();markChips();renderQuiz(b.dataset.k)});
   const nb=$('nextBtn');if(nb)nb.onclick=nextCase;
 }
-function toggleQuiz(){quiz.on=!quiz.on;$('quiz').setAttribute('aria-pressed',quiz.on);$('quiz').textContent=quiz.on?'Exit quiz':'Quiz me';$('picker').disabled=quiz.on;
+function setQuiz(m){// 'quick' | 'guided' | null (exit)
+  quiz.on=!!m;quiz.mode=m||'quick';
+  $('quiz').setAttribute('aria-pressed',m==='quick');$('quiz').textContent=m==='quick'?'Exit quiz':'Quiz me';
+  $('guide').setAttribute('aria-pressed',m==='guided');$('guide').textContent=m==='guided'?'Exit guided read':'Guided read';
+  $('picker').disabled=quiz.on;
   if(quiz.on){quiz.score=0;quiz.n=0;nextCase()}else{quiz.answered=true;markChips();renderHead();renderCard()}}
-$('quiz').onclick=toggleQuiz;
+function toggleQuiz(){setQuiz(null)}
+$('quiz').onclick=()=>setQuiz(quiz.on&&quiz.mode==='quick'?null:'quick');
+$('guide').onclick=()=>setQuiz(quiz.on&&quiz.mode==='guided'?null:'guided');
+
+/* ---------- guided read (real patients): commit to each step of a systematic read ---------- */
+// Interval estimates from a median beat of the reconstructed VCG. QRS width is dependable; PR and QT are
+// approximate, so grading leans on the cardiologist labels and only quotes a number when the two agree.
+function measureIntervals(H,rr,pp,am,hrv){
+  const out={pr:null,qrs:null,qt:null,qtc:null,nb:0};
+  if(!rr||rr.length<3)return out;
+  const med=a=>{const b=Array.from(a).sort((x,y)=>x-y);return b.length?b[b.length>>1]:0};
+  const RR=med(rr.slice(1).map((v,i)=>v-rr[i]));
+  const pre=Math.round(Math.min(230,RR*.55)),post=Math.round(Math.min(330,RR*.78)),W=pre+post+1;
+  let beats=rr.filter(R=>R-pre>=0&&R+post<N);if(beats.length<2)return out;
+  const build=bs=>{const M=new Float32Array(W*3),col=new Float32Array(bs.length);
+    for(let j=0;j<W;j++)for(let a=0;a<3;a++){for(let b=0;b<bs.length;b++)col[b]=H[(bs[b]-pre+j)*3+a];M[j*3+a]=med(col)}return M};
+  let M=build(beats);
+  // drop beats that don't look like the median (ectopy), then rebuild
+  const q0=pre-30,q1=pre+50,corr=R=>{let sxy=0,sxx=0,syy=0;for(let j=q0;j<=q1;j++)for(let a=0;a<3;a++){const x=M[j*3+a],y=H[(R-pre+j)*3+a];sxy+=x*y;sxx+=x*x;syy+=y*y}return sxy/Math.sqrt(sxx*syy||1)};
+  const good=beats.filter(R=>corr(R)>.85);if(good.length>=3&&good.length<beats.length){beats=good;M=build(beats)}
+  out.nb=beats.length;
+  const sv=new Float32Array(W);for(let j=1;j<W;j++)sv[j]=Math.hypot(M[j*3]-M[j*3-3],M[j*3+1]-M[j*3-2],M[j*3+2]-M[j*3-1]);
+  const s5=new Float32Array(W);for(let j=0;j<W;j++){let s=0,n=0;for(let k=-2;k<=2;k++){if(j+k>=0&&j+k<W){s+=sv[j+k];n++}}s5[j]=s/n}
+  let pk=0,pj=pre;for(let j=pre-25;j<=pre+25;j++)if(s5[j]>pk){pk=s5[j];pj=j}
+  const floor=med(s5),thr=Math.max(.045*pk,1.6*floor);
+  const quiet=(j,dir)=>{for(let k=0;k<7;k++){const i=j+dir*k;if(i<1||i>=W)return true;if(s5[i]>thr)return false}return true};
+  let on=pj,off=pj;while(on>pre-90&&!quiet(on,-1))on--;while(off<pre+140&&!quiet(off,1))off++;
+  out.qrs=(off-on)/FS*1000;
+  // baseline = just before QRS onset
+  const bl=[0,0,0];for(let a=0;a<3;a++){let s=0;for(let j=on-12;j<on-2;j++)s+=M[Math.max(0,j)*3+a];bl[a]=s/10}
+  const mag=new Float32Array(W);for(let j=0;j<W;j++)mag[j]=Math.hypot(M[j*3]-bl[0],M[j*3+1]-bl[1],M[j*3+2]-bl[2]);
+  const mg=new Float32Array(W);for(let j=0;j<W;j++){let s=0,n=0;for(let k=-4;k<=4;k++){if(j+k>=0&&j+k<W){s+=mag[j+k];n++}}mg[j]=s/n}
+  // T end: tangent at steepest descent after the T peak
+  const t0=off+30;let tp=t0,tv=0;for(let j=t0;j<W-10;j++)if(mg[j]>tv){tv=mg[j];tp=j}
+  if(tv>.04&&tp<W-12){let ms=0,mj=tp;for(let j=tp+2;j<W-3;j++){const d=mg[j-2]-mg[j+2];if(d>ms){ms=d;mj=j}}
+    let base=Infinity;for(let j=mj;j<W;j++)base=Math.min(base,mg[j]);
+    const slope=ms/4;if(slope>0){const te=mj+(mg[mj]-base)/slope;if(te<W+15){out.qt=(te-on)/FS*1000;const rrs=60/(hrv||60000/(RR*2));out.qtc=out.qt/Math.sqrt(rrs)}}}
+  // PR: stored P centres -> median P-to-R offset -> walk back to P onset
+  if(am==='p'&&pp&&pp.length>=3){const ds=[];for(const R of beats){let q=null;for(const x of pp){if(x<R)q=x;else break}if(q!==null&&R-q<pre-25&&R-q>20)ds.push(R-q)}
+    if(ds.length>=3){const d=med(ds),sp=ds.map(x=>Math.abs(x-d)).sort((a,b)=>a-b)[ds.length>>1];
+      if(sp<=12){const pc=pre-d,lo=Math.max(4,pc-55),b2=[0,0,0];for(let a=0;a<3;a++){let s=0;for(let j=lo-4;j<lo+4;j++)s+=M[j*3+a];b2[a]=s/8}
+        const pm=j=>Math.hypot(M[j*3]-b2[0],M[j*3+1]-b2[1],M[j*3+2]-b2[2]);
+        let ppk=0;for(let j=pc-12;j<=pc+12;j++)ppk=Math.max(ppk,pm(j));
+        let po=pc;while(po>lo&&pm(po)>.2*ppk)po--;
+        out.pr=(on-po)/FS*1000;if(out.pr<60||out.pr>450)out.pr=null}}}
+  return out;
+}
+const GKEYS=['rate','rhythm','axis','intervals','chambers','ischemia','dx'];
+const GNAME={rate:'Rate',rhythm:'Rhythm',axis:'Axis',intervals:'Intervals',chambers:'Hypertrophy',ischemia:'Ischemia',dx:'Diagnosis'};
+const G={step:0,ans:{},res:{},iv:null};
+let tally={};try{tally=JSON.parse(localStorage.getItem('tlvl.guided.v1'))||{}}catch(e){tally={}}
+const saveTally=()=>{try{localStorage.setItem('tlvl.guided.v1',JSON.stringify(tally))}catch(e){}};
+function gHide(k){return quiz.on&&quiz.mode==='guided'&&!quiz.answered&&!G.res[k]}
+const codesOf=r=>new Set(r.dx.map(d=>d[0]));
+const r10=v=>Math.round(v/10)*10;
+const RHY=[['sinus','Sinus rhythm (any rate)'],['ectopy','Sinus with premature beats'],['afib','Atrial fibrillation'],['flutter','Atrial flutter'],['svt','Supraventricular tachycardia'],['avb','Second- or third-degree AV block'],['paced','Paced']];
+const POL=[['up','Mostly upright'],['equal','About equal'],['down','Mostly downward']];
+const AXC=[['normal','Normal (−30° to +90°)'],['left','Left axis deviation'],['right','Right axis deviation'],['extreme','Extreme (northwest)']];
+const CHM=[['none','None'],['lvh','Left ventricular hypertrophy'],['rvh','Right ventricular hypertrophy'],['lae','Left atrial enlargement'],['rae','Right atrial enlargement']];
+const IST=[['none','None'],['acute','Acute infarction (ST elevation)'],['old','Old infarction (Q waves)'],['stt','Ischemic or nonspecific ST-T change']];
+const ISR=[['inf','Inferior'],['ant','Anterior / septal'],['lat','Lateral'],['post','Posterior']];
+const lab=(opts,v)=>{const a=[].concat(v||[]).map(x=>(opts.find(o=>o[0]===x)||[x,x])[1]);return a.length?a.join(', '):'—'};
+function rhythmOf(r){const c=codesOf(r),a=[];
+  if(c.has('PACE')||r.c==='pace')a.push('paced');
+  if(c.has('AFIB')||r.am==='af')a.push('afib');
+  if(c.has('AFLT')||r.am==='flutter')a.push('flutter');
+  if(c.has('PSVT')||r.am==='svt'||r.c==='svt')a.push('svt');
+  if(c.has('3AVB')||c.has('2AVB')||r.c==='avb2'||r.c==='avb3')a.push('avb');
+  if(c.has('PAC')||c.has('PVC')||c.has('BIGU')||['pac','pvc','bigu'].includes(r.c))a.push('ectopy');
+  if(!a.length)a.push('sinus');return a}
+function rrSpread(r){const d=r.r.slice(1).map((v,i)=>v-r.r[i]).sort((a,b)=>a-b);return d.length<2?0:(d[d.length-1]-d[0])/d[d.length>>1]}
+function axisTruth(ax){const m=10,acc=[],main=ax>=-30&&ax<=90?'normal':ax<-30&&ax>=-90?'left':ax>90?'right':'extreme';
+  if(ax>=-30-m&&ax<=90+m)acc.push('normal');if(ax>=-90-m&&ax<=-30+m)acc.push('left');if(ax>=90-m||ax<=-180+m)acc.push('right');if(ax<=-90+m||ax>=180-m)acc.push('extreme');
+  const pol=p=>p>.35?['up']:p<-.35?['down']:[p>=0?'up':'down','equal'],t=ax*Math.PI/180;
+  return {main,acc,I:pol(Math.cos(t)),F:pol(Math.sin(t))}}
+function chambersOf(r){const c=codesOf(r),a=[];
+  if(c.has('LVH')||r.c==='lvh')a.push('lvh');if(c.has('RVH')||r.c==='rvh')a.push('rvh');
+  if(c.has('LAO/LAE')||r.c==='lae')a.push('lae');if(c.has('RAO/RAE')||r.c==='rae')a.push('rae');return a}
+const MI_T={IMI:['inf'],ASMI:['ant'],AMI:['ant'],ALMI:['ant','lat'],ILMI:['inf','lat'],IPMI:['inf','post'],IPLMI:['inf','post','lat'],LMI:['lat'],PMI:['post']};
+const ISC_T={ISCAL:['ant','lat'],ISCAN:['ant'],ISCAS:['ant'],ISCIN:['inf'],ISCIL:['inf','lat'],ISCLA:['lat']};
+function ischemiaOf(r){const c=codesOf(r),terr=new Set(),types=[];let mi=false,isc=false,ns=false;
+  for(const k of c){if(MI_T[k]){mi=true;MI_T[k].forEach(t=>terr.add(t))}else if(k.startsWith('ISC')){isc=true;(ISC_T[k]||[]).forEach(t=>terr.add(t))}else if(k==='NST_'||k==='NT_')ns=true}
+  const cm={inf_acute:'inf',ant_acute:'ant',lat_mi:'lat',post_mi:'post',inf_old:'inf',ant_old:'ant'}[r.c];if(cm){mi=true;terr.add(cm)}
+  if(r.c==='isc')isc=true;
+  if(mi){const st=r.st||'';if(/III/.test(st))types.push('old');else if(/II/.test(st))types.push('acute','old');else if(/I/.test(st))types.push('acute');
+    else if(/_acute/.test(r.c))types.push('acute');else if(/_old/.test(r.c))types.push('old');else types.push('acute','old')}
+  if(isc||ns)types.push('stt');if(ns&&!mi&&!isc)types.push('none');
+  if(!types.length)types.push('none');return {types,terr:[...terr]}}
+
+const gch=(name,opts,multi)=>`<div class="gopts" data-name="${name}"${multi?' data-multi="1"':''}>${opts.map(o=>`<button type="button" class="gch" data-v="${o[0]}" aria-pressed="false">${o[1]}</button>`).join('')}</div>`;
+const gnum=(name,label,unit,conv)=>`<div class="gfield"><label for="g_${name}">${label}</label><input id="g_${name}" type="number" inputmode="numeric" min="0" max="999" data-name="${name}"><span>${unit}</span><button type="button" class="tool gcal" data-for="${name}" data-conv="${conv}">${conv==='bpm'?'Use caliper R–R':'Use caliper Δt'}</button></div>`;
+const gq=(label,inner)=>`<div class="gq"><div class="dxh">${label}</div>${inner}</div>`;
+const GS={
+  rate:{q:'What is the ventricular rate?',cal:true,
+    html:()=>gnum('rate','Ventricular rate','bpm','bpm'),
+    ready:a=>a.rate>0,
+    grade(a){const h=rec.hr,cl=v=>v<60?'slow':v>100?'fast':'normal';
+      return {parts:[{l:'Rate',you:`${a.rate} bpm (${cl(a.rate)})`,ref:h?`${h} bpm (${cl(h)})`:'not available',ok:h?Math.abs(a.rate-h)<=Math.max(10,.1*h):null}],
+        tip:'Quick check: 300 ÷ the number of large boxes between two R waves. If the rhythm is irregular, count the QRS complexes on the 10-second strip and multiply by 6.'}}},
+  rhythm:{q:'What is the rhythm?',
+    html:()=>gq('R–R intervals',gch('reg',[['regular','Regular'],['irregular','Irregular']]))+gq('Rhythm',gch('rhy',RHY)),
+    ready:a=>a.reg&&a.rhy,
+    grade(a){const s=rrSpread(rec),racc=s>.2?['irregular']:s<.1?['regular']:['regular','irregular'],t=rhythmOf(rec);
+      return {parts:[{l:'Regularity',you:a.reg,ref:`${racc.length>1?'borderline, either accepted':racc[0]} (R–R varies ${Math.round(s*100)}%)`,ok:racc.includes(a.reg)},
+        {l:'Rhythm',you:lab(RHY,a.rhy),ref:lab(RHY,t),ok:t.includes(a.rhy)}],
+        tip:'Ask three things: are the R–R intervals even, is there a P wave before every QRS, and is there a QRS after every P wave.'}}},
+  axis:{q:'Where does the QRS axis point?',
+    html:()=>gq('QRS in lead I',gch('axI',POL))+gq('QRS in aVF',gch('axF',POL))+gq('Axis',gch('axC',AXC)),
+    ready:a=>a.axI&&a.axF&&a.axC,
+    grade(a){const t=axisTruth(rec.ax);
+      return {parts:[{l:'Lead I',you:lab(POL,a.axI),ref:lab(POL,t.I[0])+(t.I.length>1?' (close to equal, either accepted)':''),ok:t.I.includes(a.axI)},{l:'aVF',you:lab(POL,a.axF),ref:lab(POL,t.F[0])+(t.F.length>1?' (close to equal, either accepted)':''),ok:t.F.includes(a.axF)},
+        {l:'Axis',you:lab(AXC,a.axC),ref:`${lab(AXC,t.main)} · ${rec.ax}°`,ok:t.acc.includes(a.axC)}],
+        tip:'I up and aVF up is a normal axis. I up with aVF down is leftward: check lead II, and if II is also down it is true left axis deviation. I down with aVF up is right axis deviation.'}}},
+  intervals:{q:'Measure the intervals',cal:true,
+    html:()=>gnum('pr','PR interval','ms','ms')+gch('nopr',[['1','No consistent PR interval']],true)+gnum('qrs','QRS duration','ms','ms')+gnum('qt','QT interval','ms','ms'),
+    ready:a=>(a.pr>0||(a.nopr||[]).length)&&a.qrs>0&&a.qt>0,
+    grade(a){const r=rec,c=codesOf(r),iv=G.iv||{},parts=[],nopr=(a.nopr||[]).length>0,near=(v,d,f)=>[v-d,v,v+d].some(f);
+      // PR
+      const prC=v=>v<120?'short':v>200?'long':'normal',PRW={short:'short (under 120 ms)',normal:'normal (120–200 ms)',long:'prolonged (over 200 ms)'},said=nopr?'no consistent PR':`${a.pr} ms`;
+      const av3=c.has('3AVB')||r.c==='avb3';
+      if(r.am==='af'||r.am==='flutter'||av3)parts.push({l:'PR',you:said,ref:r.am==='af'?'none: no P waves in atrial fibrillation':r.am==='flutter'?'none: flutter waves, no fixed PR':'none: P waves and QRS complexes are dissociated',ok:nopr});
+      else if(r.am!=='p'||!r.p.length||c.has('2AVB')||r.c==='avb2'||iv.pr==null)parts.push({l:'PR',you:said,ref:c.has('2AVB')||r.c==='avb2'?'varies from beat to beat in second-degree block; not graded':'P waves are hard to place on this record; not graded',ok:null});
+      else{const lbl=c.has('1AVB')||r.c==='avb1'?'long':c.has('WPW')||r.c==='wpw'?'short':'normal',acc=[lbl,prC(iv.pr)];
+        parts.push({l:'PR',you:said,ref:PRW[lbl]+(prC(iv.pr)===lbl?` · app estimate about ${r10(iv.pr)} ms`:''),ok:!nopr&&near(a.pr,10,v=>acc.includes(prC(v)))})}
+      // QRS
+      const qC=v=>v>=120?'wide':'narrow',lw=c.has('CLBBB')||c.has('CRBBB')||c.has('PACE')||['lbbb','rbbb','bifasc','pace'].includes(r.c),eq=iv.qrs,qacc=[];
+      if(eq!=null){qacc.push(qC(eq));if(eq>105&&eq<130)qacc.push('wide','narrow')}if(lw)qacc.push('wide');if(!qacc.length)qacc.push('narrow');
+      const qmain=lw||(eq!=null&&eq>=120)?'wide':'narrow';
+      parts.push({l:'QRS',you:`${a.qrs} ms`,ref:(qmain==='wide'?'wide (120 ms or more)':'narrow (under 120 ms)')+(eq!=null&&qC(eq)===qmain?` · app estimate about ${r10(eq)} ms`:''),ok:near(a.qrs,10,v=>qacc.includes(qC(v)))});
+      // QT
+      const h=r.hr||72,cut=r.s==='M'?450:460,uq=a.qt/Math.sqrt(60/h),tC=v=>v>cut?'long':'normal',ll=c.has('LNGQT')||r.c==='lqt'?'long':'normal',eOK=iv.qtc!=null&&iv.qtc>300&&iv.qtc<560,tacc=[ll];
+      if(eOK)tacc.push(tC(iv.qtc));
+      parts.push({l:'QT',you:`${a.qt} ms → QTc ${Math.round(uq)} ms at ${h} bpm`,ref:`QTc ${ll==='long'?'prolonged':'not prolonged'} (cutoff ${cut} ms)`+(eOK&&tC(iv.qtc)===ll?` · app estimate QT about ${r10(iv.qt)} ms, QTc about ${r10(iv.qtc)} ms`:''),ok:near(uq,15,v=>tacc.includes(tC(v)))});
+      return {parts,tip:'Normal PR is 120–200 ms, QRS under 120 ms, and QTc under about 450 ms in men and 460 ms in women (QTc = QT ÷ √R–R in seconds). App estimates come from a median beat and are approximate; grading follows the cardiologist labels.'}}},
+  chambers:{q:'Any hypertrophy or atrial enlargement?',
+    html:()=>gch('ch',CHM,true),
+    ready:a=>(a.ch||[]).length>0,
+    grade(a){const t=chambersOf(rec),u=a.ch.filter(x=>x!=='none'),ok=u.length===t.length&&u.every(x=>t.includes(x));
+      return {parts:[{l:'Chambers',you:lab(CHM,a.ch),ref:t.length?lab(CHM,t):'None labeled',ok}],
+        tip:'LVH: S in V1 plus R in V5 or V6 of 35 mm or more. RVH: tall R in V1 with right axis deviation. Left atrial: broad notched P in II or a deep terminal P in V1. Right atrial: P taller than 2.5 mm in II.'}}},
+  ischemia:{q:'Any infarction or ischemia?',
+    html:()=>gq('Finding',gch('isT',IST))+gq('Territory, if any',gch('isR',ISR,true)),
+    ready:a=>!!a.isT,
+    grade(a){const t=ischemiaOf(rec),u=a.isR||[],parts=[{l:'Finding',you:lab(IST,a.isT),ref:lab(IST,t.types.filter(x=>x!=='none'||t.types.length===1)),ok:t.types.includes(a.isT)}];
+      if(t.types[0]!=='none'&&t.terr.length)parts.push({l:'Territory',you:lab(ISR,u),ref:lab(ISR,t.terr),ok:a.isT==='none'?false:u.length>0&&u.every(x=>t.terr.includes(x))});
+      return {parts,tip:'Inferior is II, III and aVF. Anterior and septal is V1–V4. Lateral is I, aVL, V5 and V6. Posterior shows as a tall R with ST depression in V1–V3. ST elevation suggests acute injury; Q waves without it suggest an old infarct.'}}},
+  dx:{q:'Put it together: what is the diagnosis?',
+    html:()=>gch('dx',quiz.opts.map(k=>[k,CATS[k].n])),
+    ready:a=>!!a.dx,
+    grade(a){return {parts:[{l:'Diagnosis',you:CATS[a.dx].n,ref:CATS[curCat].n,ok:a.dx===curCat}],tip:''}}}
+};
+const partsHTML=ps=>`<ul class="finds gres">${ps.map(p=>`<li class="${p.ok===false?'no':p.ok?'ok':'na'}"><b>${p.ok===false?'✗':p.ok?'✓':'·'} ${p.l}</b><span>You: ${p.you}<br>Reference: ${p.ref}</span></li>`).join('')}</ul>`;
+function tallyHTML(){const ks=GKEYS.filter(k=>tally[k]&&tally[k][1]);if(!ks.length)return '';
+  let weak=null,wr=1;for(const k of ks){const x=tally[k][0]/tally[k][1];if(tally[k][1]>=3&&x<wr){wr=x;weak=k}}
+  return `<div class="gtally"><span class="dxh">Your steps so far</span>${ks.map(k=>`<span class="${k===weak?'weak':''}">${GNAME[k]} <b>${tally[k][0]}/${tally[k][1]}</b></span>`).join('')}<button type="button" class="glink" id="gReset">Reset</button></div>`}
+function renderGuide(){
+  const k=GKEYS[G.step],s=GS[k],res=G.res[k],done=GKEYS.filter(x=>G.res[x]),okN=done.filter(x=>G.res[x].ok).length,card=$('card');
+  const prog=`<ol class="gprog" aria-label="Steps">${GKEYS.map((x,i)=>`<li class="${G.res[x]?(G.res[x].ok?'ok':'no'):i===G.step?'cur':''}">${GNAME[x]}</li>`).join('')}</ol>`;
+  const head=t=>`<div class="qhead"><div><div class="eyebrow">Guided read · step ${G.step+1} of ${GKEYS.length}</div><h2>${t}</h2></div><div class="score">This patient <b>${okN}</b> / ${done.length}</div></div>${prog}`;
+  if(!res){
+    card.innerHTML=`${head(s.q)}${s.html()}<p class="gmsg" id="gMsg" hidden>Answer each part before you commit.</p><button class="next" id="gCommit">Commit</button>${tallyHTML()}`;
+    if(s.cal&&!cal.on)setCal(true);
+    card.querySelectorAll('.gopts').forEach(box=>{const name=box.dataset.name,multi=!!box.dataset.multi;
+      box.querySelectorAll('.gch').forEach(b=>b.onclick=()=>{const v=b.dataset.v;
+        if(multi){let a=(G.ans[name]||[]).slice();a=a.includes(v)?a.filter(x=>x!==v):v==='none'?['none']:[...a.filter(x=>x!=='none'),v];G.ans[name]=a}else G.ans[name]=v;
+        box.querySelectorAll('.gch').forEach(x=>x.setAttribute('aria-pressed',multi?G.ans[name].includes(x.dataset.v):x.dataset.v===G.ans[name]));
+        if(name==='nopr'&&G.ans.nopr.length)$('g_pr').value=''})});
+    card.querySelectorAll('.gcal').forEach(b=>b.onclick=()=>{const m=$('gMsg');
+      if(!cal.dt){m.hidden=false;m.textContent='Tap two points on the tracing with the calipers first.';return}
+      m.hidden=true;$('g_'+b.dataset.for).value=Math.round(b.dataset.conv==='bpm'?60000/cal.dt:cal.dt)});
+    $('gCommit').onclick=()=>{card.querySelectorAll('input[data-name]').forEach(i=>G.ans[i.dataset.name]=i.value===''?0:+i.value);
+      if(!s.ready(G.ans)){const m=$('gMsg');m.hidden=false;m.textContent='Answer each part before you commit.';return}
+      const r=s.grade(G.ans);r.ok=r.parts.every(p=>p.ok!==false);G.res[k]=r;
+      const t=tally[k]=tally[k]||[0,0];t[1]++;if(r.ok)t[0]++;saveTally();
+      if(k==='dx'){quiz.answered=true;quiz.n++;if(r.ok)quiz.score++;markChips()}
+      renderHead();renderGuide()};
+  }else if(k!=='dx'){
+    card.innerHTML=`${head(s.q)}<p class="verdict ${res.ok?'ok':'no'}">${res.ok?'Correct.':'Not quite.'}</p>${partsHTML(res.parts)}${res.tip?`<p class="gtip">${res.tip}</p>`:''}<button class="next" id="gNext">Next step</button>${tallyHTML()}`;
+    $('gNext').onclick=()=>{G.step++;renderGuide()};
+  }else{
+    const c=CATS[curCat];
+    card.innerHTML=`${head(c.n)}<p class="verdict ${okN===GKEYS.length?'ok':'no'}">${okN} of ${GKEYS.length} steps right${res.ok?'':'. The diagnosis is '+c.n.charAt(0).toLowerCase()+c.n.slice(1)}.</p>
+      ${partsHTML(GKEYS.flatMap(x=>G.res[x].parts))}${tallyHTML()}${dxHTML(rec)}${catBody(c)}<button class="next" id="gNext">Next patient</button>`;
+    $('gNext').onclick=nextCase;
+  }
+  const rs=$('gReset');if(rs)rs.onclick=()=>{tally={};saveTally();renderGuide()};
+}
 
 /* ---------- hemodynamics: time-varying elastance circulation driven by this ECG's timing ---------- */
 const HBASE={Ees:2.8,V0:15,A:1.1,B:.018,Vd:12,Erv:.6,V0rv:15,Arv:.5,Brv:.02,Ela:.3,V0la:8,Ala:.45,Bla:.05,Rmv:.004,Rav:.004,Zc:.035,Cart:1.5,Rsys:1.0,
